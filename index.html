@@ -1,0 +1,1572 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="theme-color" content="#F8F9FA" id="theme-color-meta">
+
+    <title>EXECUTE</title>
+
+    <link rel="stylesheet" href="/styles/styles.css">
+</head>
+
+
+<body>
+
+    <div class="app">
+
+
+        <!-- ============================================================
+     DESKTOP SIDEBAR
+     ============================================================ -->
+
+        <aside class="sidebar" id="sidebar">
+
+            <div class="sidebar-brand">
+
+                <div class="sidebar-brand-icon">
+                    E
+                </div>
+
+                <div class="sidebar-brand-text">
+                    EXECUTE
+                </div>
+
+            </div>
+
+
+            <nav class="sidebar-nav">
+
+
+                <button class="nav-item active" data-target="dashboard">
+
+                    <svg viewBox="0 0 24 24">
+                        <rect x="3" y="3" width="7" height="7" rx="1" />
+                        <rect x="14" y="3" width="7" height="7" rx="1" />
+                        <rect x="3" y="14" width="7" height="7" rx="1" />
+                        <rect x="14" y="14" width="7" height="7" rx="1" />
+                    </svg>
+
+                    <span class="nav-label">
+                        Dashboard
+                    </span>
+
+                </button>
+
+
+                <button class="nav-item" data-target="tasks">
+
+                    <svg viewBox="0 0 24 24">
+                        <path d="M9 11l3 3L22 4" />
+                        <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
+                    </svg>
+
+                    <span class="nav-label">
+                        Tasks
+                    </span>
+
+                </button>
+
+
+                <button class="nav-item" data-target="goals">
+
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10" />
+                        <circle cx="12" cy="12" r="6" />
+                        <circle cx="12" cy="12" r="2" />
+                    </svg>
+
+                    <span class="nav-label">
+                        Goals
+                    </span>
+
+                </button>
+
+
+                <button class="nav-item" data-target="focus">
+
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10" />
+                        <polygon points="10 8 16 12 10 16 10 8" />
+                    </svg>
+
+                    <span class="nav-label">
+                        Focus
+                    </span>
+
+                </button>
+
+
+                <button class="nav-item" data-target="progress">
+
+                    <svg viewBox="0 0 24 24">
+                        <path d="M18 20V10" />
+                        <path d="M12 20V4" />
+                        <path d="M6 20v-6" />
+                    </svg>
+
+                    <span class="nav-label">
+                        Progress
+                    </span>
+
+                </button>
+
+
+            </nav>
+
+
+            <div class="sidebar-footer">
+
+
+                <button class="nav-item" data-target="settings">
+
+                    <svg viewBox="0 0 24 24">
+
+                        <circle cx="12" cy="12" r="3" />
+
+                        <path
+                            d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" />
+
+                    </svg>
+
+                    <span class="nav-label">
+                        Settings
+                    </span>
+
+                </button>
+
+
+                <button class="collapse-toggle" id="collapse-toggle">
+
+                    <svg viewBox="0 0 24 24" id="collapse-icon">
+                        <path d="M11 17l-5-5 5-5" />
+                        <path d="M18 17l-5-5 5-5" />
+                    </svg>
+
+                    <span>
+                        Collapse
+                    </span>
+
+                </button>
+
+
+            </div>
+
+        </aside>
+
+
+        <!-- ============================================================
+     MOBILE HEADER
+     ============================================================ -->
+
+        <header class="mobile-header">
+
+            <div class="mobile-header-brand">
+                EXECUTE
+            </div>
+
+
+            <div class="mobile-header-actions">
+
+
+                <button class="icon-btn" aria-label="Notifications" type="button">
+
+                    <svg viewBox="0 0 24 24">
+
+                        <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
+
+                        <path d="M13.73 21a2 2 0 01-3.46 0" />
+
+                    </svg>
+
+                </button>
+
+
+                <!-- MOBILE THEME BUTTON -->
+
+                <button class="icon-btn" id="mobile-theme-toggle" aria-label="Toggle theme" type="button">
+
+                    <svg class="theme-icon sun active" viewBox="0 0 24 24" id="mobile-icon-sun">
+
+                        <circle cx="12" cy="12" r="5" />
+
+                        <path d="M12 1v2" />
+                        <path d="M12 21v2" />
+                        <path d="M4.22 4.22l1.42 1.42" />
+                        <path d="M18.36 18.36l1.42 1.42" />
+                        <path d="M1 12h2" />
+                        <path d="M21 12h2" />
+                        <path d="M4.22 19.78l1.42-1.42" />
+                        <path d="M18.36 5.64l1.42-1.42" />
+
+                    </svg>
+
+
+                    <svg class="theme-icon moon" viewBox="0 0 24 24" id="mobile-icon-moon">
+
+                        <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+
+                    </svg>
+
+                </button>
+
+            </div>
+
+        </header>
+
+
+        <!-- ============================================================
+     MAIN
+     ============================================================ -->
+
+        <main class="main" id="main">
+
+            <div class="main-inner">
+
+
+                <!-- ============================================================
+     DASHBOARD
+     ============================================================ -->
+
+                <section id="dashboard" class="view active">
+
+
+                    <header class="page-header">
+
+                        <div class="page-header-left">
+
+                            <h1>
+                                Dashboard
+                            </h1>
+
+                            <p id="greeting">
+                                Good morning.
+                            </p>
+
+                        </div>
+
+
+                        <div class="page-header-right">
+
+                            <span class="date-label" id="current-date">
+                                Loading...
+                            </span>
+
+
+                            <!-- DESKTOP THEME BUTTON -->
+
+                            <button class="icon-btn" id="desktop-theme-toggle" aria-label="Toggle theme" type="button">
+
+                                <svg class="theme-icon sun active" viewBox="0 0 24 24" id="desktop-icon-sun">
+
+                                    <circle cx="12" cy="12" r="5" />
+
+                                    <path d="M12 1v2" />
+                                    <path d="M12 21v2" />
+                                    <path d="M4.22 4.22l1.42 1.42" />
+                                    <path d="M18.36 18.36l1.42 1.42" />
+                                    <path d="M1 12h2" />
+                                    <path d="M21 12h2" />
+                                    <path d="M4.22 19.78l1.42-1.42" />
+                                    <path d="M18.36 5.64l1.42-1.42" />
+
+                                </svg>
+
+
+                                <svg class="theme-icon moon" viewBox="0 0 24 24" id="desktop-icon-moon">
+
+                                    <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+
+                                </svg>
+
+                            </button>
+
+                        </div>
+
+                    </header>
+
+
+                    <div class="bento-grid">
+
+
+                        <!-- FOCUS -->
+
+                        <div class="focus-col">
+
+                            <div class="section-label">
+                                Current Focus
+                            </div>
+
+
+                            <div class="card focus-card">
+
+                                <div class="focus-card-content">
+
+                                    <div class="focus-goal-label">
+
+                                        <svg viewBox="0 0 24 24">
+
+                                            <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+
+                                            <line x1="4" y1="22" x2="4" y2="15" />
+
+                                        </svg>
+
+                                        Goal: Become a Developer
+
+                                    </div>
+
+
+                                    <div class="focus-title">
+                                        JavaScript Functions
+                                    </div>
+
+
+                                    <div class="focus-subtitle">
+                                        45 min session planned.
+                                    </div>
+
+                                </div>
+
+
+                                <div class="focus-footer">
+
+                                    <div class="focus-timer" id="dashboard-timer">
+                                        25:00
+                                    </div>
+
+
+                                    <button class="btn btn-primary" id="dashboard-start-focus" type="button">
+
+                                        <svg viewBox="0 0 24 24">
+
+                                            <polygon points="10 8 16 12 10 16 10 8" />
+
+                                        </svg>
+
+                                        Start Focus
+
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- STATS -->
+
+                        <div class="stats-col">
+
+
+                            <div>
+
+                                <div class="section-label">
+                                    Today's Progress
+                                </div>
+
+
+                                <div class="card progress-card">
+
+                                    <div class="progress-header">
+
+                                        <span>
+                                            Tasks
+                                        </span>
+
+                                        <span class="progress-number">
+
+                                            <strong>
+                                                6
+                                            </strong>
+
+                                            / 8
+
+                                        </span>
+
+                                    </div>
+
+
+                                    <div class="progress-track">
+
+                                        <div class="progress-fill" style="width:75%"></div>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="card stats-card">
+
+                                <div class="stats-list">
+
+
+                                    <div class="stat-row">
+
+                                        <span class="stat-row-label">
+
+                                            <svg viewBox="0 0 24 24">
+
+                                                <path d="M9 11l3 3L22 4" />
+
+                                                <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
+
+                                            </svg>
+
+                                            Tasks Completed
+
+                                        </span>
+
+                                        <span class="stat-value">
+                                            18
+                                        </span>
+
+                                    </div>
+
+
+                                    <div class="stat-row">
+
+                                        <span class="stat-row-label">
+
+                                            <svg viewBox="0 0 24 24">
+
+                                                <circle cx="12" cy="12" r="10" />
+
+                                                <circle cx="12" cy="12" r="6" />
+
+                                                <circle cx="12" cy="12" r="2" />
+
+                                            </svg>
+
+                                            Goals in Progress
+
+                                        </span>
+
+                                        <span class="stat-value">
+                                            2
+                                        </span>
+
+                                    </div>
+
+
+                                    <div class="stat-row">
+
+                                        <span class="stat-row-label">
+
+                                            <svg viewBox="0 0 24 24">
+
+                                                <circle cx="12" cy="12" r="10" />
+
+                                                <polygon points="10 8 16 12 10 16 10 8" />
+
+                                            </svg>
+
+                                            Focus Sessions
+
+                                        </span>
+
+                                        <span class="stat-value">
+                                            12
+                                        </span>
+
+                                    </div>
+
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- ACTIVITY -->
+
+                    <div class="activity-section">
+
+                        <div class="section-label">
+                            Recent Activity
+                        </div>
+
+
+                        <div class="activity-scroll">
+
+
+                            <div class="card activity-card">
+
+                                <div class="activity-icon-box">
+
+                                    <svg viewBox="0 0 24 24">
+
+                                        <polyline points="20 6 9 17 4 12" />
+
+                                    </svg>
+
+                                </div>
+
+
+                                <div>
+
+                                    <div class="activity-text">
+                                        Completed 'HTML Forms'
+                                    </div>
+
+                                    <div class="activity-time">
+                                        2 hours ago
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="card activity-card">
+
+                                <div class="activity-icon-box">
+
+                                    <svg viewBox="0 0 24 24">
+
+                                        <polygon points="10 8 16 12 10 16 10 8" />
+
+                                    </svg>
+
+                                </div>
+
+
+                                <div>
+
+                                    <div class="activity-text">
+                                        Started a focus session
+                                    </div>
+
+                                    <div class="activity-time">
+                                        4 hours ago
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="card activity-card">
+
+                                <div class="activity-icon-box">
+
+                                    <svg viewBox="0 0 24 24">
+
+                                        <polyline points="20 6 9 17 4 12" />
+
+                                    </svg>
+
+                                </div>
+
+
+                                <div>
+
+                                    <div class="activity-text">
+                                        Completed 'CSS Flexbox practice'
+                                    </div>
+
+                                    <div class="activity-time">
+                                        Yesterday
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+
+                <!-- ============================================================
+     TASKS
+     ============================================================ -->
+
+                <section id="tasks" class="view">
+
+                    <header class="page-header">
+
+                        <div class="page-header-left">
+
+                            <h1>
+                                Tasks
+                            </h1>
+
+                            <p>
+                                Manage your action items
+                            </p>
+
+                        </div>
+
+                        <div class="page-header-right">
+
+                            <span class="date-label" id="tasks-date"></span>
+                            <button class="btn btn-primary" id="add-task-btn" type="button">
+                                + Add Task
+                            </button>
+                        </div>
+
+                    </header>
+
+
+                    <div class="task-list">
+
+
+                        <div class="task-item completed">
+
+                            <input class="task-checkbox" type="checkbox" checked>
+
+                            <div class="task-content">
+
+                                <div class="task-title">
+                                    Review HTML semantics
+                                </div>
+
+                                <div class="task-meta">
+                                    Development · Completed today
+                                </div>
+
+                            </div>
+
+                            <span class="task-priority priority-low">
+                                DONE
+                            </span>
+
+                        </div>
+
+
+                        <div class="task-item">
+
+                            <input class="task-checkbox" type="checkbox">
+
+                            <div class="task-content">
+
+                                <div class="task-title">
+                                    Practice JavaScript functions
+                                </div>
+
+                                <div class="task-meta">
+                                    Development · 45 min
+                                </div>
+
+                            </div>
+
+                            <span class="task-priority priority-high">
+                                HIGH
+                            </span>
+
+                        </div>
+
+
+                        <div class="task-item">
+
+                            <input class="task-checkbox" type="checkbox">
+
+                            <div class="task-content">
+
+                                <div class="task-title">
+                                    Complete Flexbox exercises
+                                </div>
+
+                                <div class="task-meta">
+                                    Development · 30 min
+                                </div>
+
+                            </div>
+
+                            <span class="task-priority priority-medium">
+                                MEDIUM
+                            </span>
+
+                        </div>
+
+
+                        <div class="task-item">
+
+                            <input class="task-checkbox" type="checkbox">
+
+                            <div class="task-content">
+
+                                <div class="task-title">
+                                    Read JavaScript arrays notes
+                                </div>
+
+                                <div class="task-meta">
+                                    Study · 20 min
+                                </div>
+
+                            </div>
+
+                            <span class="task-priority priority-low">
+                                LOW
+                            </span>
+
+                        </div>
+
+
+                        <div class="task-item">
+
+                            <input class="task-checkbox" type="checkbox">
+
+                            <div class="task-content">
+
+                                <div class="task-title">
+                                    Build small DOM exercise
+                                </div>
+
+                                <div class="task-meta">
+                                    Practice · 45 min
+                                </div>
+
+                            </div>
+
+                            <span class="task-priority priority-high">
+                                HIGH
+                            </span>
+
+                        </div>
+
+
+                    </div>
+
+                </section>
+
+
+                <!-- ============================================================
+     GOALS
+     ============================================================ -->
+
+                <section id="goals" class="view">
+
+                    <header class="page-header">
+
+                        <div class="page-header-left">
+
+                            <h1>
+                                Goals
+                            </h1>
+
+                            <p>
+                                Define what you are working toward
+                            </p>
+
+                        </div>
+
+                        <div class="page-header-right">
+
+                            <span class="date-label" id="goals-date"></span>
+                            <button class="btn btn-primary" id="add-goal-btn" type="button">
+                                + Add Goal
+                            </button>
+                        </div>
+
+                    </header>
+
+
+                    <div class="goal-list">
+
+
+                        <div class="card goal-card">
+
+                            <div class="goal-header">
+
+                                <div>
+
+                                    <div class="goal-title">
+                                        Become a Developer
+                                    </div>
+
+                                    <div class="goal-description">
+                                        Build strong fundamentals in web development.
+                                    </div>
+
+                                </div>
+
+                                <div class="goal-percent">
+                                    65%
+                                </div>
+
+                            </div>
+
+
+                            <div class="goal-progress">
+
+                                <div class="progress-track">
+
+                                    <div class="progress-fill" style="width:65%"></div>
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="goal-footer">
+
+                                <span>
+                                    Started 3 weeks ago
+                                </span>
+
+                                <span>
+                                    Target: 2026
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="card goal-card">
+
+                            <div class="goal-header">
+
+                                <div>
+
+                                    <div class="goal-title">
+                                        Master Cybersecurity
+                                    </div>
+
+                                    <div class="goal-description">
+                                        Build practical offensive security skills.
+                                    </div>
+
+                                </div>
+
+                                <div class="goal-percent">
+                                    42%
+                                </div>
+
+                            </div>
+
+
+                            <div class="goal-progress">
+
+                                <div class="progress-track">
+
+                                    <div class="progress-fill" style="width:42%"></div>
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="goal-footer">
+
+                                <span>
+                                    Labs completed: 18
+                                </span>
+
+                                <span>
+                                    Active
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="card goal-card">
+
+                            <div class="goal-header">
+
+                                <div>
+
+                                    <div class="goal-title">
+                                        Spanish Fluency
+                                    </div>
+
+                                    <div class="goal-description">
+                                        Develop everyday speaking and comprehension.
+                                    </div>
+
+                                </div>
+
+                                <div class="goal-percent">
+                                    28%
+                                </div>
+
+                            </div>
+
+
+                            <div class="goal-progress">
+
+                                <div class="progress-track">
+
+                                    <div class="progress-fill" style="width:28%"></div>
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="goal-footer">
+
+                                <span>
+                                    Daily practice
+                                </span>
+
+                                <span>
+                                    Active
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="card goal-card">
+
+                            <div class="goal-header">
+
+                                <div>
+
+                                    <div class="goal-title">
+                                        Build EXECUTE
+                                    </div>
+
+                                    <div class="goal-description">
+                                        Create a personal execution system.
+                                    </div>
+
+                                </div>
+
+                                <div class="goal-percent">
+                                    55%
+                                </div>
+
+                            </div>
+
+
+                            <div class="goal-progress">
+
+                                <div class="progress-track">
+
+                                    <div class="progress-fill" style="width:55%"></div>
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="goal-footer">
+
+                                <span>
+                                    Product development
+                                </span>
+
+                                <span>
+                                    Active
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                    </div>
+
+                </section>
+
+
+                <!-- ============================================================
+     FOCUS
+     ============================================================ -->
+
+                <section id="focus" class="view">
+
+                    <header class="page-header">
+
+                        <div class="page-header-left">
+
+                            <h1>
+                                Focus
+                            </h1>
+
+                            <p>
+                                Deep work session
+                            </p>
+
+                        </div>
+
+                        <div class="page-header-right">
+
+                            <span class="date-label" id="focus-date"></span>
+
+                        </div>
+
+                    </header>
+
+
+                    <div class="card focus-page-card">
+
+
+                        <div class="focus-page-icon">
+
+                            <svg viewBox="0 0 24 24">
+
+                                <circle cx="12" cy="12" r="10" />
+
+                                <polygon points="10 8 16 12 10 16 10 8" />
+
+                            </svg>
+
+                        </div>
+
+
+                        <div class="focus-page-title">
+                            JavaScript Functions
+                        </div>
+
+
+                        <div class="focus-page-subtitle">
+                            Deep work session · 25 minutes
+                        </div>
+
+
+                        <div class="big-timer" id="focus-timer">
+                            25:00
+                        </div>
+
+
+                        <button class="btn btn-primary" id="focus-start" type="button">
+
+                            <svg viewBox="0 0 24 24">
+
+                                <polygon points="10 8 16 12 10 16 10 8" />
+
+                            </svg>
+
+                            Start Session
+
+                        </button>
+
+
+                    </div>
+
+                </section>
+
+
+                <!-- ============================================================
+     PROGRESS
+     ============================================================ -->
+
+                <section id="progress" class="view">
+
+                    <header class="page-header">
+
+                        <div class="page-header-left">
+
+                            <h1>
+                                Progress
+                            </h1>
+
+                            <p>
+                                Review your momentum
+                            </p>
+
+                        </div>
+
+                        <div class="page-header-right">
+
+                            <span class="date-label" id="progress-date"></span>
+
+                        </div>
+
+                    </header>
+
+
+                    <div class="progress-overview">
+
+
+                        <div class="card metric-card">
+
+                            <div class="metric-label">
+                                Tasks completed
+                            </div>
+
+                            <div class="metric-value">
+                                18
+                            </div>
+
+                            <div class="metric-change">
+                                +4 this week
+                            </div>
+
+                        </div>
+
+
+                        <div class="card metric-card">
+
+                            <div class="metric-label">
+                                Focus time
+                            </div>
+
+                            <div class="metric-value">
+                                6.5h
+                            </div>
+
+                            <div class="metric-change">
+                                +1.2h this week
+                            </div>
+
+                        </div>
+
+
+                        <div class="card metric-card">
+
+                            <div class="metric-label">
+                                Current streak
+                            </div>
+
+                            <div class="metric-value">
+                                7
+                            </div>
+
+                            <div class="metric-change">
+                                Best: 12 days
+                            </div>
+
+                        </div>
+
+
+                    </div>
+
+
+                    <div class="card" style="padding:24px">
+
+                        <div class="section-label">
+                            Weekly activity
+                        </div>
+
+
+                        <div class="progress-header">
+
+                            <span>
+                                Weekly execution
+                            </span>
+
+                            <span class="progress-number">
+                                72%
+                            </span>
+
+                        </div>
+
+
+                        <div class="progress-track">
+
+                            <div class="progress-fill" style="width:72%"></div>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+
+                <!-- ============================================================
+     SETTINGS
+     ============================================================ -->
+
+                <section id="settings" class="view">
+
+                    <header class="page-header">
+
+                        <div class="page-header-left">
+
+                            <h1>
+                                Settings
+                            </h1>
+
+                            <p>
+                                Configure EXECUTE
+                            </p>
+
+                        </div>
+
+                        <div class="page-header-right">
+
+                            <span class="date-label" id="settings-date"></span>
+
+                        </div>
+
+                    </header>
+
+
+                    <div class="settings-list">
+
+
+                        <div class="settings-row">
+
+                            <div>
+
+                                <div class="settings-title">
+                                    Appearance
+                                </div>
+
+                                <div class="settings-description">
+                                    Switch between light and dark theme.
+                                </div>
+
+                            </div>
+
+
+                            <button class="theme-switch" id="settings-theme-toggle" aria-label="Toggle theme"
+                                aria-pressed="false" type="button"></button>
+
+                        </div>
+
+
+                        <div class="settings-row">
+
+                            <div>
+
+                                <div class="settings-title">
+                                    Sidebar
+                                </div>
+
+                                <div class="settings-description">
+                                    Collapse the desktop navigation.
+                                </div>
+
+                            </div>
+
+
+                            <button class="btn" id="settings-sidebar-toggle" type="button"
+                                style="background:var(--bg-hover);color:var(--text-primary)">
+                                Toggle
+                            </button>
+
+                        </div>
+
+
+                        <div class="settings-row">
+
+                            <div>
+
+                                <div class="settings-title">
+                                    Data
+                                </div>
+
+                                <div class="settings-description">
+                                    Current version uses local mock data.
+                                </div>
+
+                            </div>
+
+
+                            <span style="
+        color:var(--accent);
+        font-size:13px;
+        font-weight:600
+      ">
+                                LOCAL
+                            </span>
+
+                        </div>
+
+
+                    </div>
+
+                </section>
+
+
+            </div>
+
+        </main>
+
+
+        <!-- ============================================================
+     MOBILE BOTTOM NAV
+     ============================================================ -->
+
+        <nav class="tab-bar">
+
+
+            <button class="tab-item active" data-target="dashboard" type="button">
+
+                <svg viewBox="0 0 24 24">
+
+                    <rect x="3" y="3" width="7" height="7" rx="1" />
+
+                    <rect x="14" y="3" width="7" height="7" rx="1" />
+
+                    <rect x="3" y="14" width="7" height="7" rx="1" />
+
+                    <rect x="14" y="14" width="7" height="7" rx="1" />
+
+                </svg>
+
+                <span>
+                    Home
+                </span>
+
+            </button>
+
+
+            <button class="tab-item" data-target="tasks" type="button">
+
+                <svg viewBox="0 0 24 24">
+
+                    <path d="M9 11l3 3L22 4" />
+
+                    <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
+
+                </svg>
+
+                <span>
+                    Tasks
+                </span>
+
+            </button>
+
+
+            <button class="tab-item" data-target="goals" type="button">
+
+                <svg viewBox="0 0 24 24">
+
+                    <circle cx="12" cy="12" r="10" />
+
+                    <circle cx="12" cy="12" r="6" />
+
+                    <circle cx="12" cy="12" r="2" />
+
+                </svg>
+
+                <span>
+                    Goals
+                </span>
+
+            </button>
+
+
+            <button class="tab-item" data-target="focus" type="button">
+
+                <svg viewBox="0 0 24 24">
+
+                    <circle cx="12" cy="12" r="10" />
+
+                    <polygon points="10 8 16 12 10 16 10 8" />
+
+                </svg>
+
+                <span>
+                    Focus
+                </span>
+
+            </button>
+
+
+            <button class="tab-item" data-target="progress" type="button">
+
+                <svg viewBox="0 0 24 24">
+
+                    <path d="M18 20V10" />
+                    <path d="M12 20V4" />
+                    <path d="M6 20v-6" />
+
+                </svg>
+
+                <span>
+                    Stats
+                </span>
+
+            </button>
+
+
+        </nav>
+
+        <!-- ============================================================
+             TASK MODAL
+             ============================================================ -->
+
+        <div class="modal-overlay" id="task-modal" aria-hidden="true">
+
+            <div class="modal" role="dialog" aria-modal="true" aria-labelledby="task-modal-title">
+
+                <div class="modal-header">
+
+                    <h2 class="modal-title" id="task-modal-title">
+                        Add Task
+                    </h2>
+
+                    <button class="modal-close" type="button" data-close-modal="task-modal" aria-label="Close">
+                        ×
+                    </button>
+
+                </div>
+
+
+                <form class="modal-form" id="task-form">
+
+                    <div class="form-group">
+
+                        <label class="form-label" for="task-title-input">
+                            Task
+                        </label>
+
+                        <input class="form-input" id="task-title-input" name="title" type="text"
+                            placeholder="e.g. Practice JavaScript functions" required>
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label class="form-label" for="task-category-input">
+                            Category
+                        </label>
+
+                        <input class="form-input" id="task-category-input" name="category" type="text"
+                            placeholder="e.g. Development">
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label class="form-label" for="task-duration-input">
+                            Duration
+                        </label>
+
+                        <input class="form-input" id="task-duration-input" name="duration" type="text"
+                            placeholder="e.g. 30 min">
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label class="form-label" for="task-priority-input">
+                            Priority
+                        </label>
+
+                        <select class="form-select" id="task-priority-input" name="priority">
+
+                            <option value="low">
+                                Low
+                            </option>
+
+                            <option value="medium" selected>
+                                Medium
+                            </option>
+
+                            <option value="high">
+                                High
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="modal-actions">
+
+                        <button class="btn btn-secondary" type="button" data-close-modal="task-modal">
+                            Cancel
+                        </button>
+
+                        <button class="btn btn-primary" type="submit">
+                            Add Task
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        </div>
+
+
+        <!-- ============================================================
+             GOAL MODAL
+             ============================================================ -->
+
+        <div class="modal-overlay" id="goal-modal" aria-hidden="true">
+
+            <div class="modal" role="dialog" aria-modal="true" aria-labelledby="goal-modal-title">
+
+                <div class="modal-header">
+
+                    <h2 class="modal-title" id="goal-modal-title">
+                        Add Goal
+                    </h2>
+
+                    <button class="modal-close" type="button" data-close-modal="goal-modal" aria-label="Close">
+                        ×
+                    </button>
+
+                </div>
+
+
+                <form class="modal-form" id="goal-form">
+
+                    <div class="form-group">
+
+                        <label class="form-label" for="goal-title-input">
+                            Goal
+                        </label>
+
+                        <input class="form-input" id="goal-title-input" name="title" type="text"
+                            placeholder="e.g. Master JavaScript" required>
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label class="form-label" for="goal-description-input">
+                            Description
+                        </label>
+
+                        <textarea class="form-textarea" id="goal-description-input" name="description"
+                            placeholder="What do you want to achieve?"></textarea>
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label class="form-label" for="goal-target-input">
+                            Target
+                        </label>
+
+                        <input class="form-input" id="goal-target-input" name="target" type="text"
+                            placeholder="e.g. December 2026">
+
+                    </div>
+
+
+                    <div class="modal-actions">
+
+                        <button class="btn btn-secondary" type="button" data-close-modal="goal-modal">
+                            Cancel
+                        </button>
+
+                        <button class="btn btn-primary" type="submit">
+                            Add Goal
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        </div>
+
+        <script src="/js/app.js"></script>
+
+</body>
+
+</html>
