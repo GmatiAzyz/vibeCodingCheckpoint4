@@ -84,6 +84,8 @@ function loadData() {
     EXECUTE.goals = savedGoals ? JSON.parse(savedGoals) : [];
 
     EXECUTE.activities = savedActivities ? JSON.parse(savedActivities) : [];
+
+    normalizeTasks();
   } catch (error) {
     console.error("EXECUTE: Could not load saved data.", error);
 
@@ -287,7 +289,7 @@ function renderActivities() {
    TASK DATA
    ============================================================ */
 
-function createTask(title, category, duration, priority) {
+function createTask(title, category, duration, priority, goalId) {
   return {
     id: createId("task"),
 
@@ -304,7 +306,108 @@ function createTask(title, category, duration, priority) {
     createdAt: Date.now(),
 
     completedAt: null,
+
+    goalId: goalId || null,
   };
+}
+
+function getGoalById(goalId) {
+  if (!goalId) {
+    return null;
+  }
+
+  return (
+    EXECUTE.goals.find(function (goal) {
+      return goal.id === goalId;
+    }) || null
+  );
+}
+
+function getTasksForGoal(goalId) {
+  if (!goalId) {
+    return [];
+  }
+
+  return EXECUTE.tasks.filter(function (task) {
+    return task.goalId === goalId;
+  });
+}
+
+function calculateGoalProgress(goalId) {
+  const linkedTasks = getTasksForGoal(goalId);
+
+  const total = linkedTasks.length;
+
+  if (total === 0) {
+    return {
+      progress: 0,
+      completed: 0,
+      total: 0,
+    };
+  }
+
+  const completed = linkedTasks.filter(function (task) {
+    return task.completed;
+  }).length;
+
+  const progress = Math.min(100, Math.round((completed / total) * 100));
+
+  return {
+    progress: progress,
+    completed: completed,
+    total: total,
+  };
+}
+
+function syncAllGoalProgress() {
+  EXECUTE.goals.forEach(function (goal) {
+    goal.progress = calculateGoalProgress(goal.id).progress;
+  });
+
+  saveGoals();
+}
+
+function normalizeTasks() {
+  EXECUTE.tasks.forEach(function (task) {
+    if (task.goalId === undefined) {
+      task.goalId = null;
+    }
+
+    if (task.goalId && !getGoalById(task.goalId)) {
+      task.goalId = null;
+    }
+  });
+}
+
+function populateTaskGoalSelect() {
+  const select = $("#task-goal-input");
+
+  if (!select) {
+    return;
+  }
+
+  select.innerHTML = `
+
+    <option value="">
+      No Goal
+    </option>
+
+  `;
+
+  EXECUTE.goals.forEach(function (goal) {
+    const option = document.createElement("option");
+
+    option.value = goal.id;
+    option.textContent = goal.title;
+
+    select.appendChild(option);
+  });
+}
+
+function onTasksChanged() {
+  syncAllGoalProgress();
+  renderTasks();
+  renderGoals();
 }
 
 /* ============================================================
@@ -367,6 +470,8 @@ function importExistingTasks() {
       createdAt: Date.now(),
 
       completedAt: checkbox && checkbox.checked ? Date.now() : null,
+
+      goalId: null,
     };
 
     EXECUTE.tasks.push(task);
@@ -418,6 +523,14 @@ function renderTasks() {
 
     item.dataset.taskId = task.id;
 
+    const goal = getGoalById(task.goalId);
+
+    const metaParts = [escapeHTML(task.category), escapeHTML(task.duration)];
+
+    if (goal) {
+      metaParts.push(escapeHTML(goal.title));
+    }
+
     item.innerHTML = `
 
         <input
@@ -434,9 +547,7 @@ function renderTasks() {
           </div>
 
           <div class="task-meta">
-            ${escapeHTML(task.category)}
-            ·
-            ${escapeHTML(task.duration)}
+            ${metaParts.join(" · ")}
           </div>
 
         </div>
@@ -510,7 +621,7 @@ function handleTaskChange(event) {
 
   saveTasks();
 
-  renderTasks();
+  onTasksChanged();
 }
 
 function deleteTask(taskId) {
@@ -536,7 +647,7 @@ function deleteTask(taskId) {
 
   addActivity("Deleted task '" + task.title + "'");
 
-  renderTasks();
+  onTasksChanged();
 }
 
 $(".task-list")?.addEventListener("change", handleTaskChange);
@@ -561,6 +672,8 @@ const taskForm = $("#task-form");
 
 addTaskButton?.addEventListener("click", function () {
   taskForm?.reset();
+
+  populateTaskGoalSelect();
 
   openModal("task-modal");
 
@@ -598,7 +711,12 @@ taskForm?.addEventListener("submit", function (event) {
 
   const priority = priorityInput ? priorityInput.value : "low";
 
-  const task = createTask(title, category, duration, priority);
+  const goalInput = $("#task-goal-input");
+
+  const goalId =
+    goalInput && goalInput.value ? goalInput.value : null;
+
+  const task = createTask(title, category, duration, priority, goalId);
 
   EXECUTE.tasks.push(task);
 
@@ -606,7 +724,7 @@ taskForm?.addEventListener("submit", function (event) {
 
   addActivity("Created task '" + title + "'");
 
-  renderTasks();
+  onTasksChanged();
 
   closeModal("task-modal");
 
@@ -737,6 +855,8 @@ function renderGoals() {
 
     `;
 
+    updateDashboard();
+
     return;
   }
 
@@ -747,7 +867,17 @@ function renderGoals() {
 
     card.dataset.goalId = goal.id;
 
-    const progress = Math.max(0, Math.min(100, Number(goal.progress) || 0));
+    const stats = calculateGoalProgress(goal.id);
+
+    const progress = stats.progress;
+
+    const taskProgressText =
+      stats.total === 0
+        ? "No tasks linked"
+        : stats.completed +
+          " of " +
+          stats.total +
+          " tasks completed";
 
     card.innerHTML = `
 
@@ -787,7 +917,7 @@ function renderGoals() {
         <div class="goal-footer">
 
           <span>
-            ${formatActivityTime(goal.createdAt)}
+            ${taskProgressText}
           </span>
 
           <span>
@@ -825,6 +955,8 @@ function renderGoals() {
 
     goalList.appendChild(card);
   });
+
+  updateDashboard();
 }
 
 /* ============================================================
@@ -850,11 +982,19 @@ function deleteGoal(goalId) {
     return item.id !== goalId;
   });
 
+  EXECUTE.tasks.forEach(function (task) {
+    if (task.goalId === goalId) {
+      task.goalId = null;
+    }
+  });
+
   saveGoals();
+  saveTasks();
 
   addActivity("Deleted goal '" + goal.title + "'");
 
   renderGoals();
+  renderTasks();
 }
 
 $(".goal-list")?.addEventListener("click", function (event) {
@@ -920,6 +1060,8 @@ goalForm?.addEventListener("submit", function (event) {
 
   addActivity("Created goal '" + title + "'");
 
+  syncAllGoalProgress();
+
   renderGoals();
 
   closeModal("goal-modal");
@@ -928,93 +1070,356 @@ goalForm?.addEventListener("submit", function (event) {
 });
 
 /* ============================================================
+   STATISTICS HELPERS
+   ============================================================ */
+
+function toDateKey(timestamp) {
+  const date = new Date(timestamp);
+
+  const year = date.getFullYear();
+
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return year + "-" + month + "-" + day;
+}
+
+function isToday(timestamp) {
+  if (!timestamp) {
+    return false;
+  }
+
+  return toDateKey(timestamp) === toDateKey(Date.now());
+}
+
+function getStartOfWeek(date) {
+  const start = new Date(date);
+
+  start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() - start.getDay());
+
+  return start;
+}
+
+function isThisWeek(timestamp) {
+  if (!timestamp) {
+    return false;
+  }
+
+  return timestamp >= getStartOfWeek(new Date()).getTime();
+}
+
+function isTaskActiveToday(task) {
+  if (!task.completed) {
+    return true;
+  }
+
+  return isToday(task.completedAt);
+}
+
+function getTodayTaskStats() {
+  const todayTasks = EXECUTE.tasks.filter(isTaskActiveToday);
+
+  const completedToday = EXECUTE.tasks.filter(function (task) {
+    return task.completed && isToday(task.completedAt);
+  }).length;
+
+  const totalToday = todayTasks.length;
+
+  const percentage =
+    totalToday === 0 ? 0 : Math.round((completedToday / totalToday) * 100);
+
+  return {
+    total: totalToday,
+    completed: completedToday,
+    percentage: percentage,
+  };
+}
+
+function getActiveGoalsCount() {
+  return EXECUTE.goals.filter(function (goal) {
+    return calculateGoalProgress(goal.id).progress < 100;
+  }).length;
+}
+
+function getCompletedFocusSessions(options) {
+  const onlyThisWeek = options && options.thisWeek;
+
+  return EXECUTE.activities.filter(function (activity) {
+    if (activity.text !== "Completed a focus session") {
+      return false;
+    }
+
+    if (onlyThisWeek) {
+      return isThisWeek(activity.timestamp);
+    }
+
+    return true;
+  });
+}
+
+function getFocusSeconds(sessionCount) {
+  return sessionCount * EXECUTE.timer.duration;
+}
+
+function formatFocusDuration(totalSeconds) {
+  const hours = totalSeconds / 3600;
+
+  if (hours < 1) {
+    return Math.round(totalSeconds / 60) + "m";
+  }
+
+  const rounded = Math.round(hours * 10) / 10;
+
+  return Number.isInteger(rounded) ? rounded + "h" : rounded + "h";
+}
+
+function formatFocusDelta(totalSeconds) {
+  if (totalSeconds <= 0) {
+    return "+0h";
+  }
+
+  return "+" + formatFocusDuration(totalSeconds);
+}
+
+function getProductiveDayKeys() {
+  const days = new Set();
+
+  EXECUTE.tasks.forEach(function (task) {
+    if (task.completed && task.completedAt) {
+      days.add(toDateKey(task.completedAt));
+    }
+  });
+
+  getCompletedFocusSessions().forEach(function (activity) {
+    days.add(toDateKey(activity.timestamp));
+  });
+
+  return days;
+}
+
+function calculateStreaks(dayKeys) {
+  const sortedDays = Array.from(dayKeys).sort();
+
+  if (!sortedDays.length) {
+    return {
+      current: 0,
+      best: 0,
+    };
+  }
+
+  let best = 1;
+  let run = 1;
+
+  for (let index = 1; index < sortedDays.length; index++) {
+    const previousParts = sortedDays[index - 1].split("-");
+    const currentParts = sortedDays[index].split("-");
+
+    const previous = new Date(
+      Number(previousParts[0]),
+      Number(previousParts[1]) - 1,
+      Number(previousParts[2]),
+    );
+
+    const current = new Date(
+      Number(currentParts[0]),
+      Number(currentParts[1]) - 1,
+      Number(currentParts[2]),
+    );
+
+    previous.setDate(previous.getDate() + 1);
+
+    if (
+      previous.getFullYear() === current.getFullYear() &&
+      previous.getMonth() === current.getMonth() &&
+      previous.getDate() === current.getDate()
+    ) {
+      run++;
+    } else {
+      run = 1;
+    }
+
+    if (run > best) {
+      best = run;
+    }
+  }
+
+  let current = 0;
+  const cursor = new Date();
+
+  cursor.setHours(0, 0, 0, 0);
+
+  while (dayKeys.has(toDateKey(cursor.getTime()))) {
+    current++;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+
+  return {
+    current: current,
+    best: Math.max(best, current),
+  };
+}
+
+function getWeeklyExecutionPercent(dayKeys) {
+  const weekStart = getStartOfWeek(new Date());
+
+  let activeDays = 0;
+
+  for (let day = 0; day < 7; day++) {
+    const cursor = new Date(weekStart);
+
+    cursor.setDate(cursor.getDate() + day);
+
+    if (dayKeys.has(toDateKey(cursor.getTime()))) {
+      activeDays++;
+    }
+  }
+
+  return Math.round((activeDays / 7) * 100);
+}
+
+function getCompletedTasksCount(options) {
+  const onlyThisWeek = options && options.thisWeek;
+
+  return EXECUTE.tasks.filter(function (task) {
+    if (!task.completed) {
+      return false;
+    }
+
+    if (onlyThisWeek) {
+      return isThisWeek(task.completedAt);
+    }
+
+    return true;
+  }).length;
+}
+
+/* ============================================================
    DASHBOARD
    ============================================================ */
 
 function updateDashboard() {
-  const total = EXECUTE.tasks.length;
+  const todayStats = getTodayTaskStats();
 
-  const completed = EXECUTE.tasks.filter(function (task) {
-    return task.completed;
-  }).length;
+  const allCompleted = getCompletedTasksCount();
 
-  const remaining = total - completed;
+  const activeGoals = getActiveGoalsCount();
 
-  const percentage = total === 0 ? 0 : Math.round((completed / total) * 100);
+  const focusSessions = getCompletedFocusSessions().length;
 
-  /*
-   * Existing dashboard progress number
-   */
-
-  const progressNumber = $(".progress-number");
+  const progressNumber = $("#dashboard-task-progress");
 
   if (progressNumber) {
     progressNumber.innerHTML = `
 
       <strong>
-        ${completed}
+        ${todayStats.completed}
       </strong>
 
-      / ${total}
+      / ${todayStats.total}
 
     `;
   }
 
-  /*
-   * Existing dashboard progress bar
-   */
-
-  const dashboardProgress = $(".stats-col .progress-fill");
+  const dashboardProgress = $("#dashboard .stats-col .progress-fill");
 
   if (dashboardProgress) {
-    dashboardProgress.style.width = percentage + "%";
+    dashboardProgress.style.width = todayStats.percentage + "%";
   }
 
-  /*
-   * Dashboard statistics.
-   */
-
-  const statValues = $$(".stats-card .stat-value");
+  const statValues = $$("#dashboard .stats-card .stat-value");
 
   if (statValues.length >= 1) {
-    statValues[0].textContent = completed;
+    statValues[0].textContent = allCompleted;
   }
 
   if (statValues.length >= 2) {
-    statValues[1].textContent = EXECUTE.goals.length;
+    statValues[1].textContent = activeGoals;
   }
-
-  /*
-   * Focus sessions are calculated
-   * from completed focus activities.
-   */
-
-  const focusSessions = EXECUTE.activities.filter(function (activity) {
-    return activity.text.includes("focus session");
-  }).length;
 
   if (statValues.length >= 3) {
     statValues[2].textContent = focusSessions;
   }
 
-  /*
-   * Update dashboard task progress
-   * without requiring hardcoded values.
-   */
-
   const dashboardTaskText = document.querySelector(
-    ".stats-col .progress-header > span:first-child",
+    "#dashboard .stats-col .progress-header > span:first-child",
   );
 
   if (dashboardTaskText) {
     dashboardTaskText.textContent = "Tasks";
   }
 
-  /*
-   * Prevent unused-variable issues
-   */
+  updateProgress();
+}
 
-  void remaining;
+/* ============================================================
+   PROGRESS PAGE
+   ============================================================ */
+
+function updateProgress() {
+  const completedTasks = getCompletedTasksCount();
+  const completedTasksThisWeek = getCompletedTasksCount({ thisWeek: true });
+
+  const allFocusSessions = getCompletedFocusSessions();
+  const weekFocusSessions = getCompletedFocusSessions({ thisWeek: true });
+
+  const totalFocusSeconds = getFocusSeconds(allFocusSessions.length);
+  const weekFocusSeconds = getFocusSeconds(weekFocusSessions.length);
+
+  const productiveDays = getProductiveDayKeys();
+  const streaks = calculateStreaks(productiveDays);
+  const weeklyExecution = getWeeklyExecutionPercent(productiveDays);
+
+  const tasksMetric = $("#progress-metric-tasks");
+
+  if (tasksMetric) {
+    tasksMetric.textContent = completedTasks;
+  }
+
+  const tasksWeekMetric = $("#progress-metric-tasks-week");
+
+  if (tasksWeekMetric) {
+    tasksWeekMetric.textContent =
+      "+" + completedTasksThisWeek + " this week";
+  }
+
+  const focusMetric = $("#progress-metric-focus");
+
+  if (focusMetric) {
+    focusMetric.textContent = formatFocusDuration(totalFocusSeconds);
+  }
+
+  const focusWeekMetric = $("#progress-metric-focus-week");
+
+  if (focusWeekMetric) {
+    focusWeekMetric.textContent = formatFocusDelta(weekFocusSeconds);
+  }
+
+  const streakMetric = $("#progress-metric-streak");
+
+  if (streakMetric) {
+    streakMetric.textContent = streaks.current;
+  }
+
+  const bestStreakMetric = $("#progress-metric-best-streak");
+
+  if (bestStreakMetric) {
+    bestStreakMetric.textContent =
+      "Best: " + streaks.best + (streaks.best === 1 ? " day" : " days");
+  }
+
+  const weeklyPercentElement = $("#progress-weekly-percent");
+
+  if (weeklyPercentElement) {
+    weeklyPercentElement.textContent = weeklyExecution + "%";
+  }
+
+  const weeklyFill = $("#progress-weekly-fill");
+
+  if (weeklyFill) {
+    weeklyFill.style.width = weeklyExecution + "%";
+  }
 }
 
 /* ============================================================
@@ -1396,6 +1801,8 @@ function finishFocusTimer() {
   renderTimer();
 
   updateFocusButton();
+
+  updateDashboard();
 }
 
 /* Focus button */
@@ -1425,6 +1832,8 @@ loadData();
 importExistingTasks();
 
 importExistingGoals();
+
+syncAllGoalProgress();
 
 /*
  * Render the actual application data.
