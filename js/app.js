@@ -1,6 +1,11 @@
 /* ============================================================
-               EXECUTE APPLICATION STATE
-               ============================================================ */
+   EXECUTE APPLICATION
+   Local-first productivity application
+   ============================================================ */
+
+/* ============================================================
+   APPLICATION STATE
+   ============================================================ */
 
 const EXECUTE = {
   currentView: "dashboard",
@@ -9,20 +14,23 @@ const EXECUTE = {
 
   sidebarCollapsed: false,
 
+  tasks: [],
+
+  goals: [],
+
+  activities: [],
+
   timer: {
     duration: 25 * 60,
-
     remaining: 25 * 60,
-
     running: false,
-
     interval: null,
   },
 };
 
 /* ============================================================
-               DOM HELPERS
-               ============================================================ */
+   DOM HELPERS
+   ============================================================ */
 
 function $(selector) {
   return document.querySelector(selector);
@@ -30,6 +38,81 @@ function $(selector) {
 
 function $$(selector) {
   return document.querySelectorAll(selector);
+}
+
+/* ============================================================
+   STORAGE
+   ============================================================ */
+
+const STORAGE_KEYS = {
+  tasks: "execute_tasks",
+
+  goals: "execute_goals",
+
+  activities: "execute_activities",
+
+  theme: "execute_theme",
+
+  sidebar: "execute_sidebar_collapsed",
+};
+
+function saveTasks() {
+  localStorage.setItem(STORAGE_KEYS.tasks, JSON.stringify(EXECUTE.tasks));
+}
+
+function saveGoals() {
+  localStorage.setItem(STORAGE_KEYS.goals, JSON.stringify(EXECUTE.goals));
+}
+
+function saveActivities() {
+  localStorage.setItem(
+    STORAGE_KEYS.activities,
+    JSON.stringify(EXECUTE.activities),
+  );
+}
+
+function loadData() {
+  try {
+    const savedTasks = localStorage.getItem(STORAGE_KEYS.tasks);
+
+    const savedGoals = localStorage.getItem(STORAGE_KEYS.goals);
+
+    const savedActivities = localStorage.getItem(STORAGE_KEYS.activities);
+
+    EXECUTE.tasks = savedTasks ? JSON.parse(savedTasks) : [];
+
+    EXECUTE.goals = savedGoals ? JSON.parse(savedGoals) : [];
+
+    EXECUTE.activities = savedActivities ? JSON.parse(savedActivities) : [];
+  } catch (error) {
+    console.error("EXECUTE: Could not load saved data.", error);
+
+    EXECUTE.tasks = [];
+    EXECUTE.goals = [];
+    EXECUTE.activities = [];
+  }
+}
+
+/* ============================================================
+   UNIQUE IDS
+   ============================================================ */
+
+function createId(prefix) {
+  return (
+    prefix + "_" + Date.now() + "_" + Math.random().toString(36).substring(2, 9)
+  );
+}
+
+/* ============================================================
+   HTML ESCAPING
+   ============================================================ */
+
+function escapeHTML(value) {
+  const div = document.createElement("div");
+
+  div.textContent = String(value ?? "");
+
+  return div.innerHTML;
 }
 
 /* ============================================================
@@ -44,6 +127,7 @@ function openModal(modalId) {
   }
 
   modal.classList.add("active");
+
   modal.setAttribute("aria-hidden", "false");
 }
 
@@ -55,6 +139,7 @@ function closeModal(modalId) {
   }
 
   modal.classList.remove("active");
+
   modal.setAttribute("aria-hidden", "true");
 }
 
@@ -66,7 +151,7 @@ $$("[data-close-modal]").forEach(function (button) {
   });
 });
 
-/* Close when clicking the dark overlay */
+/* Close when clicking overlay */
 
 $$(".modal-overlay").forEach(function (overlay) {
   overlay.addEventListener("click", function (event) {
@@ -76,7 +161,7 @@ $$(".modal-overlay").forEach(function (overlay) {
   });
 });
 
-/* Close with Escape */
+/* Escape closes modal */
 
 document.addEventListener("keydown", function (event) {
   if (event.key !== "Escape") {
@@ -89,10 +174,389 @@ document.addEventListener("keydown", function (event) {
 });
 
 /* ============================================================
+   ACTIVITY SYSTEM
+   ============================================================ */
+
+function addActivity(text) {
+  const activity = {
+    id: createId("activity"),
+
+    text: text,
+
+    timestamp: Date.now(),
+  };
+
+  EXECUTE.activities.unshift(activity);
+
+  /*
+   * Keep the activity list small.
+   */
+
+  EXECUTE.activities = EXECUTE.activities.slice(0, 20);
+
+  saveActivities();
+
+  renderActivities();
+}
+
+function formatActivityTime(timestamp) {
+  const difference = Date.now() - timestamp;
+
+  const minutes = Math.floor(difference / 60000);
+
+  if (minutes < 1) {
+    return "Just now";
+  }
+
+  if (minutes < 60) {
+    return minutes + (minutes === 1 ? " minute ago" : " minutes ago");
+  }
+
+  const hours = Math.floor(minutes / 60);
+
+  if (hours < 24) {
+    return hours + (hours === 1 ? " hour ago" : " hours ago");
+  }
+
+  const days = Math.floor(hours / 24);
+
+  if (days === 1) {
+    return "Yesterday";
+  }
+
+  return days + " days ago";
+}
+
+function renderActivities() {
+  const container = $(".activity-scroll");
+
+  if (!container) {
+    return;
+  }
+
+  /*
+   * If there is no activity saved yet,
+   * keep the original HTML activity cards.
+   */
+
+  if (!EXECUTE.activities.length) {
+    return;
+  }
+
+  container.innerHTML = "";
+
+  EXECUTE.activities.slice(0, 10).forEach(function (activity) {
+    const card = document.createElement("div");
+
+    card.className = "card activity-card";
+
+    card.innerHTML = `
+
+        <div class="activity-icon-box">
+
+          <svg
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <polyline
+              points="20 6 9 17 4 12"
+            />
+          </svg>
+
+        </div>
+
+        <div>
+
+          <div class="activity-text">
+            ${escapeHTML(activity.text)}
+          </div>
+
+          <div class="activity-time">
+            ${formatActivityTime(activity.timestamp)}
+          </div>
+
+        </div>
+
+      `;
+
+    container.appendChild(card);
+  });
+}
+
+/* ============================================================
+   TASK DATA
+   ============================================================ */
+
+function createTask(title, category, duration, priority) {
+  return {
+    id: createId("task"),
+
+    title: title,
+
+    category: category || "General",
+
+    duration: duration || "No duration",
+
+    priority: priority || "low",
+
+    completed: false,
+
+    createdAt: Date.now(),
+
+    completedAt: null,
+  };
+}
+
+/* ============================================================
+   IMPORT EXISTING HTML TASKS
+   ============================================================ */
+
+function importExistingTasks() {
+  if (EXECUTE.tasks.length > 0) {
+    return;
+  }
+
+  const taskElements = $$(".task-list .task-item");
+
+  if (!taskElements.length) {
+    return;
+  }
+
+  taskElements.forEach(function (item) {
+    const titleElement = item.querySelector(".task-title");
+
+    const metaElement = item.querySelector(".task-meta");
+
+    const priorityElement = item.querySelector(".task-priority");
+
+    const checkbox = item.querySelector(".task-checkbox");
+
+    if (!titleElement) {
+      return;
+    }
+
+    const title = titleElement.textContent.trim();
+
+    const meta = metaElement ? metaElement.textContent.trim() : "";
+
+    const parts = meta.split("·");
+
+    const category = parts[0] ? parts[0].trim() : "General";
+
+    const duration = parts[1] ? parts[1].trim() : "No duration";
+
+    const priority = priorityElement
+      ? priorityElement.textContent.trim().toLowerCase()
+      : "low";
+
+    const task = {
+      id: createId("task"),
+
+      title: title,
+
+      category: category,
+
+      duration: duration,
+
+      priority: ["high", "medium", "low"].includes(priority) ? priority : "low",
+
+      completed: checkbox
+        ? checkbox.checked
+        : item.classList.contains("completed"),
+
+      createdAt: Date.now(),
+
+      completedAt: checkbox && checkbox.checked ? Date.now() : null,
+    };
+
+    EXECUTE.tasks.push(task);
+  });
+
+  saveTasks();
+}
+
+/* ============================================================
+   TASK RENDERING
+   ============================================================ */
+
+function renderTasks() {
+  const taskList = $(".task-list");
+
+  if (!taskList) {
+    return;
+  }
+
+  taskList.innerHTML = "";
+
+  if (!EXECUTE.tasks.length) {
+    taskList.innerHTML = `
+
+      <div
+        class="empty-state"
+        style="min-height:220px"
+      >
+
+        <h2>No tasks yet</h2>
+
+        <p>
+          Add your first task to get started.
+        </p>
+
+      </div>
+
+    `;
+
+    updateDashboard();
+
+    return;
+  }
+
+  EXECUTE.tasks.forEach(function (task) {
+    const item = document.createElement("div");
+
+    item.className = "task-item" + (task.completed ? " completed" : "");
+
+    item.dataset.taskId = task.id;
+
+    item.innerHTML = `
+
+        <input
+          class="task-checkbox"
+          type="checkbox"
+          ${task.completed ? "checked" : ""}
+          aria-label="Complete task"
+        >
+
+        <div class="task-content">
+
+          <div class="task-title">
+            ${escapeHTML(task.title)}
+          </div>
+
+          <div class="task-meta">
+            ${escapeHTML(task.category)}
+            ·
+            ${escapeHTML(task.duration)}
+          </div>
+
+        </div>
+
+        <span
+          class="task-priority priority-${escapeHTML(task.priority)}"
+        >
+          ${escapeHTML(task.priority.toUpperCase())}
+        </span>
+
+        <button
+          type="button"
+          class="task-delete"
+          data-task-delete="${task.id}"
+          aria-label="Delete task"
+          title="Delete task"
+          style="
+            border:0;
+            background:transparent;
+            color:var(--text-muted);
+            font-size:18px;
+            padding:6px;
+            cursor:pointer;
+          "
+        >
+          ×
+        </button>
+
+      `;
+
+    taskList.appendChild(item);
+  });
+
+  updateDashboard();
+}
+
+/* ============================================================
+   TASK EVENTS
+   ============================================================ */
+
+function handleTaskChange(event) {
+  const checkbox = event.target.closest(".task-checkbox");
+
+  if (!checkbox) {
+    return;
+  }
+
+  const item = checkbox.closest(".task-item");
+
+  if (!item) {
+    return;
+  }
+
+  const taskId = item.dataset.taskId;
+
+  const task = EXECUTE.tasks.find(function (currentTask) {
+    return currentTask.id === taskId;
+  });
+
+  if (!task) {
+    return;
+  }
+
+  task.completed = checkbox.checked;
+
+  task.completedAt = checkbox.checked ? Date.now() : null;
+
+  if (task.completed) {
+    addActivity("Completed '" + task.title + "'");
+  }
+
+  saveTasks();
+
+  renderTasks();
+}
+
+function deleteTask(taskId) {
+  const task = EXECUTE.tasks.find(function (item) {
+    return item.id === taskId;
+  });
+
+  if (!task) {
+    return;
+  }
+
+  const confirmed = confirm(`Delete "${task.title}"?`);
+
+  if (!confirmed) {
+    return;
+  }
+
+  EXECUTE.tasks = EXECUTE.tasks.filter(function (item) {
+    return item.id !== taskId;
+  });
+
+  saveTasks();
+
+  addActivity("Deleted task '" + task.title + "'");
+
+  renderTasks();
+}
+
+$(".task-list")?.addEventListener("change", handleTaskChange);
+
+$(".task-list")?.addEventListener("click", function (event) {
+  const deleteButton = event.target.closest("[data-task-delete]");
+
+  if (!deleteButton) {
+    return;
+  }
+
+  deleteTask(deleteButton.dataset.taskDelete);
+});
+
+/* ============================================================
    ADD TASK
    ============================================================ */
 
 const addTaskButton = $("#add-task-btn");
+
 const taskForm = $("#task-form");
 
 addTaskButton?.addEventListener("click", function () {
@@ -108,58 +572,299 @@ addTaskButton?.addEventListener("click", function () {
 taskForm?.addEventListener("submit", function (event) {
   event.preventDefault();
 
-  const title = $("#task-title-input").value.trim();
+  const titleInput = $("#task-title-input");
 
-  const category = $("#task-category-input").value.trim() || "General";
-
-  const duration = $("#task-duration-input").value.trim() || "No duration";
-
-  const priority = $("#task-priority-input").value;
-
-  if (!title) {
+  if (!titleInput) {
     return;
   }
 
-  const task = document.createElement("div");
+  const title = titleInput.value.trim();
 
-  task.className = "task-item";
+  if (!title) {
+    titleInput.focus();
 
-  task.innerHTML = `
-      <input
-        class="task-checkbox"
-        type="checkbox"
+    return;
+  }
+
+  const categoryInput = $("#task-category-input");
+
+  const durationInput = $("#task-duration-input");
+
+  const priorityInput = $("#task-priority-input");
+
+  const category = categoryInput ? categoryInput.value.trim() : "General";
+
+  const duration = durationInput ? durationInput.value.trim() : "No duration";
+
+  const priority = priorityInput ? priorityInput.value : "low";
+
+  const task = createTask(title, category, duration, priority);
+
+  EXECUTE.tasks.push(task);
+
+  saveTasks();
+
+  addActivity("Created task '" + title + "'");
+
+  renderTasks();
+
+  closeModal("task-modal");
+
+  taskForm.reset();
+});
+
+/* ============================================================
+   GOAL DATA
+   ============================================================ */
+
+function createGoal(title, description, target) {
+  return {
+    id: createId("goal"),
+
+    title: title,
+
+    description: description || "No description",
+
+    target: target || "No target",
+
+    progress: 0,
+
+    createdAt: Date.now(),
+  };
+}
+
+/* ============================================================
+   IMPORT EXISTING HTML GOALS
+   ============================================================ */
+
+function importExistingGoals() {
+  if (EXECUTE.goals.length > 0) {
+    return;
+  }
+
+  const goalElements = $$(".goal-list .goal-card");
+
+  if (!goalElements.length) {
+    return;
+  }
+
+  goalElements.forEach(function (card) {
+    const titleElement = card.querySelector(".goal-title");
+
+    const descriptionElement = card.querySelector(".goal-description");
+
+    const percentElement = card.querySelector(".goal-percent");
+
+    const footer = card.querySelector(".goal-footer");
+
+    if (!titleElement) {
+      return;
+    }
+
+    const title = titleElement.textContent.trim();
+
+    const description = descriptionElement
+      ? descriptionElement.textContent.trim()
+      : "No description";
+
+    const percentText = percentElement
+      ? percentElement.textContent.trim()
+      : "0";
+
+    const progress = parseInt(percentText.replace("%", ""), 10);
+
+    let target = "No target";
+
+    if (footer) {
+      const spans = footer.querySelectorAll("span");
+
+      if (spans.length > 1) {
+        target = spans[1].textContent.replace("Target:", "").trim();
+      }
+    }
+
+    EXECUTE.goals.push({
+      id: createId("goal"),
+
+      title: title,
+
+      description: description,
+
+      target: target,
+
+      progress: Number.isFinite(progress)
+        ? Math.max(0, Math.min(100, progress))
+        : 0,
+
+      createdAt: Date.now(),
+    });
+  });
+
+  saveGoals();
+}
+
+/* ============================================================
+   GOAL RENDERING
+   ============================================================ */
+
+function renderGoals() {
+  const goalList = $(".goal-list");
+
+  if (!goalList) {
+    return;
+  }
+
+  goalList.innerHTML = "";
+
+  if (!EXECUTE.goals.length) {
+    goalList.innerHTML = `
+
+      <div
+        class="empty-state"
+        style="
+          grid-column:1/-1;
+          min-height:220px;
+        "
       >
 
-      <div class="task-content">
+        <h2>No goals yet</h2>
 
-        <div class="task-title">
-          ${escapeHTML(title)}
-        </div>
-
-        <div class="task-meta">
-          ${escapeHTML(category)} · ${escapeHTML(duration)}
-        </div>
+        <p>
+          Add your first goal to start tracking progress.
+        </p>
 
       </div>
 
-      <span class="task-priority priority-${priority}">
-        ${priority.toUpperCase()}
-      </span>
     `;
 
-  const taskList = document.querySelector(".task-list");
-
-  if (taskList) {
-    taskList.appendChild(task);
-
-    const checkbox = task.querySelector(".task-checkbox");
-
-    checkbox?.addEventListener("change", function () {
-      task.classList.toggle("completed", this.checked);
-    });
+    return;
   }
 
-  closeModal("task-modal");
+  EXECUTE.goals.forEach(function (goal) {
+    const card = document.createElement("div");
+
+    card.className = "card goal-card";
+
+    card.dataset.goalId = goal.id;
+
+    const progress = Math.max(0, Math.min(100, Number(goal.progress) || 0));
+
+    card.innerHTML = `
+
+        <div class="goal-header">
+
+          <div>
+
+            <div class="goal-title">
+              ${escapeHTML(goal.title)}
+            </div>
+
+            <div class="goal-description">
+              ${escapeHTML(goal.description)}
+            </div>
+
+          </div>
+
+          <div class="goal-percent">
+            ${progress}%
+          </div>
+
+        </div>
+
+        <div class="goal-progress">
+
+          <div class="progress-track">
+
+            <div
+              class="progress-fill"
+              style="width:${progress}%"
+            ></div>
+
+          </div>
+
+        </div>
+
+        <div class="goal-footer">
+
+          <span>
+            ${formatActivityTime(goal.createdAt)}
+          </span>
+
+          <span>
+            Target: ${escapeHTML(goal.target)}
+          </span>
+
+        </div>
+
+        <div
+          style="
+            display:flex;
+            justify-content:flex-end;
+            margin-top:12px;
+          "
+        >
+
+          <button
+            type="button"
+            data-goal-delete="${goal.id}"
+            style="
+              border:0;
+              background:transparent;
+              color:var(--text-muted);
+              cursor:pointer;
+              font-size:12px;
+              padding:4px 0;
+            "
+          >
+            Delete goal
+          </button>
+
+        </div>
+
+      `;
+
+    goalList.appendChild(card);
+  });
+}
+
+/* ============================================================
+   GOAL EVENTS
+   ============================================================ */
+
+function deleteGoal(goalId) {
+  const goal = EXECUTE.goals.find(function (item) {
+    return item.id === goalId;
+  });
+
+  if (!goal) {
+    return;
+  }
+
+  const confirmed = confirm(`Delete "${goal.title}"?`);
+
+  if (!confirmed) {
+    return;
+  }
+
+  EXECUTE.goals = EXECUTE.goals.filter(function (item) {
+    return item.id !== goalId;
+  });
+
+  saveGoals();
+
+  addActivity("Deleted goal '" + goal.title + "'");
+
+  renderGoals();
+}
+
+$(".goal-list")?.addEventListener("click", function (event) {
+  const deleteButton = event.target.closest("[data-goal-delete]");
+
+  if (!deleteButton) {
+    return;
+  }
+
+  deleteGoal(deleteButton.dataset.goalDelete);
 });
 
 /* ============================================================
@@ -167,6 +872,7 @@ taskForm?.addEventListener("submit", function (event) {
    ============================================================ */
 
 const addGoalButton = $("#add-goal-btn");
+
 const goalForm = $("#goal-form");
 
 addGoalButton?.addEventListener("click", function () {
@@ -182,92 +888,138 @@ addGoalButton?.addEventListener("click", function () {
 goalForm?.addEventListener("submit", function (event) {
   event.preventDefault();
 
-  const title = $("#goal-title-input").value.trim();
+  const titleInput = $("#goal-title-input");
 
-  const description =
-    $("#goal-description-input").value.trim() || "No description";
-
-  const target = $("#goal-target-input").value.trim() || "No target";
-
-  if (!title) {
+  if (!titleInput) {
     return;
   }
 
-  const goal = document.createElement("div");
+  const title = titleInput.value.trim();
 
-  goal.className = "card goal-card";
+  if (!title) {
+    titleInput.focus();
 
-  goal.innerHTML = `
-      <div class="goal-header">
-
-        <div>
-
-          <div class="goal-title">
-            ${escapeHTML(title)}
-          </div>
-
-          <div class="goal-description">
-            ${escapeHTML(description)}
-          </div>
-
-        </div>
-
-        <div class="goal-percent">
-          0%
-        </div>
-
-      </div>
-
-      <div class="goal-progress">
-
-        <div class="progress-track">
-
-          <div
-            class="progress-fill"
-            style="width:0%"
-          ></div>
-
-        </div>
-
-      </div>
-
-      <div class="goal-footer">
-
-        <span>
-          Just created
-        </span>
-
-        <span>
-          Target: ${escapeHTML(target)}
-        </span>
-
-      </div>
-    `;
-
-  const goalList = document.querySelector(".goal-list");
-
-  if (goalList) {
-    goalList.appendChild(goal);
+    return;
   }
 
+  const descriptionInput = $("#goal-description-input");
+
+  const targetInput = $("#goal-target-input");
+
+  const description = descriptionInput
+    ? descriptionInput.value.trim()
+    : "No description";
+
+  const target = targetInput ? targetInput.value.trim() : "No target";
+
+  const goal = createGoal(title, description, target);
+
+  EXECUTE.goals.push(goal);
+
+  saveGoals();
+
+  addActivity("Created goal '" + title + "'");
+
+  renderGoals();
+
   closeModal("goal-modal");
+
+  goalForm.reset();
 });
 
 /* ============================================================
-   HTML ESCAPING
+   DASHBOARD
    ============================================================ */
 
-function escapeHTML(value) {
-  const div = document.createElement("div");
+function updateDashboard() {
+  const total = EXECUTE.tasks.length;
 
-  div.textContent = value;
+  const completed = EXECUTE.tasks.filter(function (task) {
+    return task.completed;
+  }).length;
 
-  return div.innerHTML;
+  const remaining = total - completed;
+
+  const percentage = total === 0 ? 0 : Math.round((completed / total) * 100);
+
+  /*
+   * Existing dashboard progress number
+   */
+
+  const progressNumber = $(".progress-number");
+
+  if (progressNumber) {
+    progressNumber.innerHTML = `
+
+      <strong>
+        ${completed}
+      </strong>
+
+      / ${total}
+
+    `;
+  }
+
+  /*
+   * Existing dashboard progress bar
+   */
+
+  const dashboardProgress = $(".stats-col .progress-fill");
+
+  if (dashboardProgress) {
+    dashboardProgress.style.width = percentage + "%";
+  }
+
+  /*
+   * Dashboard statistics.
+   */
+
+  const statValues = $$(".stats-card .stat-value");
+
+  if (statValues.length >= 1) {
+    statValues[0].textContent = completed;
+  }
+
+  if (statValues.length >= 2) {
+    statValues[1].textContent = EXECUTE.goals.length;
+  }
+
+  /*
+   * Focus sessions are calculated
+   * from completed focus activities.
+   */
+
+  const focusSessions = EXECUTE.activities.filter(function (activity) {
+    return activity.text.includes("focus session");
+  }).length;
+
+  if (statValues.length >= 3) {
+    statValues[2].textContent = focusSessions;
+  }
+
+  /*
+   * Update dashboard task progress
+   * without requiring hardcoded values.
+   */
+
+  const dashboardTaskText = document.querySelector(
+    ".stats-col .progress-header > span:first-child",
+  );
+
+  if (dashboardTaskText) {
+    dashboardTaskText.textContent = "Tasks";
+  }
+
+  /*
+   * Prevent unused-variable issues
+   */
+
+  void remaining;
 }
 
 /* ============================================================
-               NAVIGATION
-               ============================================================ */
+   NAVIGATION
+   ============================================================ */
 
 function showSection(targetId) {
   const target = document.getElementById(targetId);
@@ -292,7 +1044,9 @@ function showSection(targetId) {
 
   window.scrollTo({
     top: 0,
+
     left: 0,
+
     behavior: "auto",
   });
 }
@@ -306,8 +1060,8 @@ $$("[data-target]").forEach(function (button) {
 });
 
 /* ============================================================
-               THEME
-               ============================================================ */
+   THEME
+   ============================================================ */
 
 function applyTheme(theme) {
   const dark = theme === "dark";
@@ -316,13 +1070,19 @@ function applyTheme(theme) {
 
   document.documentElement.setAttribute("data-theme", EXECUTE.theme);
 
-  localStorage.setItem("execute_theme", EXECUTE.theme);
+  localStorage.setItem(STORAGE_KEYS.theme, EXECUTE.theme);
 
-  /* Desktop icons */
+  /*
+   * The icons use the .active class.
+   */
 
   const desktopSun = $("#desktop-icon-sun");
 
   const desktopMoon = $("#desktop-icon-moon");
+
+  const mobileSun = $("#mobile-icon-sun");
+
+  const mobileMoon = $("#mobile-icon-moon");
 
   if (desktopSun) {
     desktopSun.classList.toggle("active", !dark);
@@ -332,12 +1092,6 @@ function applyTheme(theme) {
     desktopMoon.classList.toggle("active", dark);
   }
 
-  /* Mobile icons */
-
-  const mobileSun = $("#mobile-icon-sun");
-
-  const mobileMoon = $("#mobile-icon-moon");
-
   if (mobileSun) {
     mobileSun.classList.toggle("active", !dark);
   }
@@ -346,15 +1100,11 @@ function applyTheme(theme) {
     mobileMoon.classList.toggle("active", dark);
   }
 
-  /* Settings switch */
-
   const settingsToggle = $("#settings-theme-toggle");
 
   if (settingsToggle) {
     settingsToggle.setAttribute("aria-pressed", dark ? "true" : "false");
   }
-
-  /* Browser theme color */
 
   const themeMeta = $("#theme-color-meta");
 
@@ -369,27 +1119,21 @@ function toggleTheme() {
 
 /* Theme buttons */
 
-const desktopThemeToggle = $("#desktop-theme-toggle");
+$("#desktop-theme-toggle")?.addEventListener("click", toggleTheme);
 
-const mobileThemeToggle = $("#mobile-theme-toggle");
+$("#mobile-theme-toggle")?.addEventListener("click", toggleTheme);
 
-const settingsThemeToggle = $("#settings-theme-toggle");
-
-desktopThemeToggle?.addEventListener("click", toggleTheme);
-
-mobileThemeToggle?.addEventListener("click", toggleTheme);
-
-settingsThemeToggle?.addEventListener("click", toggleTheme);
+$("#settings-theme-toggle")?.addEventListener("click", toggleTheme);
 
 /* Load saved theme */
 
-const savedTheme = localStorage.getItem("execute_theme");
+const savedTheme = localStorage.getItem(STORAGE_KEYS.theme);
 
 applyTheme(savedTheme === "dark" ? "dark" : "light");
 
 /* ============================================================
-               SIDEBAR
-               ============================================================ */
+   SIDEBAR
+   ============================================================ */
 
 const sidebar = $("#sidebar");
 
@@ -411,24 +1155,28 @@ function setSidebarCollapsed(collapsed) {
   main.classList.toggle("collapsed", EXECUTE.sidebarCollapsed);
 
   if (collapseIcon && collapseButton) {
+    const label = collapseButton.querySelector("span");
+
     if (EXECUTE.sidebarCollapsed) {
       collapseIcon.innerHTML = `
-        <path d="M13 17l5-5-5-5"/>
-        <path d="M6 17l5-5-5-5"/>
-      `;
 
-      const label = collapseButton.querySelector("span");
+        <path d="M13 17l5-5-5-5"/>
+
+        <path d="M6 17l5-5-5-5"/>
+
+      `;
 
       if (label) {
         label.textContent = "Expand";
       }
     } else {
       collapseIcon.innerHTML = `
-        <path d="M11 17l-5-5 5-5"/>
-        <path d="M18 17l-5-5 5-5"/>
-      `;
 
-      const label = collapseButton.querySelector("span");
+        <path d="M11 17l-5-5 5-5"/>
+
+        <path d="M18 17l-5-5 5-5"/>
+
+      `;
 
       if (label) {
         label.textContent = "Collapse";
@@ -437,7 +1185,7 @@ function setSidebarCollapsed(collapsed) {
   }
 
   localStorage.setItem(
-    "execute_sidebar_collapsed",
+    STORAGE_KEYS.sidebar,
     EXECUTE.sidebarCollapsed ? "true" : "false",
   );
 }
@@ -450,15 +1198,15 @@ collapseButton?.addEventListener("click", toggleSidebar);
 
 $("#settings-sidebar-toggle")?.addEventListener("click", toggleSidebar);
 
-const savedSidebar = localStorage.getItem("execute_sidebar_collapsed");
+const savedSidebar = localStorage.getItem(STORAGE_KEYS.sidebar);
 
 if (savedSidebar === "true") {
   EXECUTE.sidebarCollapsed = true;
 }
 
 /* ============================================================
-               DATE
-               ============================================================ */
+   DATE
+   ============================================================ */
 
 function updateDates() {
   const date = new Date();
@@ -498,25 +1246,15 @@ function updateDates() {
 
 updateDates();
 
-/* ============================================================
-               TASK INTERACTIONS
-               ============================================================ */
+/*
+ * Refresh relative activity times.
+ */
 
-$$(".task-checkbox").forEach(function (checkbox) {
-  checkbox.addEventListener("change", function () {
-    const item = this.closest(".task-item");
-
-    if (!item) {
-      return;
-    }
-
-    item.classList.toggle("completed", this.checked);
-  });
-});
+setInterval(renderActivities, 60000);
 
 /* ============================================================
-               FOCUS TIMER
-               ============================================================ */
+   FOCUS TIMER
+   ============================================================ */
 
 function formatTime(seconds) {
   const minutes = Math.floor(seconds / 60);
@@ -551,25 +1289,55 @@ function updateFocusButton() {
 
   if (EXECUTE.timer.running) {
     button.innerHTML = `
+
       <svg viewBox="0 0 24 24">
-        <rect x="6" y="5" width="4" height="14"/>
-        <rect x="14" y="5" width="4" height="14"/>
+
+        <rect
+          x="6"
+          y="5"
+          width="4"
+          height="14"
+        />
+
+        <rect
+          x="14"
+          y="5"
+          width="4"
+          height="14"
+        />
+
       </svg>
+
       Pause Session
+
     `;
   } else if (EXECUTE.timer.remaining < EXECUTE.timer.duration) {
     button.innerHTML = `
+
       <svg viewBox="0 0 24 24">
-        <polygon points="10 8 16 12 10 16 10 8"/>
+
+        <polygon
+          points="10 8 16 12 10 16 10 8"
+        />
+
       </svg>
+
       Resume Session
+
     `;
   } else {
     button.innerHTML = `
+
       <svg viewBox="0 0 24 24">
-        <polygon points="10 8 16 12 10 16 10 8"/>
+
+        <polygon
+          points="10 8 16 12 10 16 10 8"
+        />
+
       </svg>
+
       Start Session
+
     `;
   }
 }
@@ -621,6 +1389,8 @@ function finishFocusTimer() {
 
   EXECUTE.timer.running = false;
 
+  addActivity("Completed a focus session");
+
   EXECUTE.timer.remaining = EXECUTE.timer.duration;
 
   renderTimer();
@@ -639,18 +1409,52 @@ $("#dashboard-start-focus")?.addEventListener("click", function () {
 });
 
 /* ============================================================
-               INITIALIZATION
-               ============================================================ */
+   INITIALIZATION
+   ============================================================ */
+
+loadData();
+
+/*
+ * On the first run there is no saved data.
+ *
+ * Import the tasks/goals that already exist
+ * in the HTML so you don't lose your existing
+ * example data.
+ */
+
+importExistingTasks();
+
+importExistingGoals();
+
+/*
+ * Render the actual application data.
+ */
+
+renderTasks();
+
+renderGoals();
+
+renderActivities();
+
+updateDashboard();
+
+/*
+ * Timer.
+ */
 
 renderTimer();
 
 updateFocusButton();
 
+/*
+ * Initial page.
+ */
+
 showSection(EXECUTE.currentView);
 
 /* ============================================================
-               RESPONSIVE STATE
-               ============================================================ */
+   RESPONSIVE STATE
+   ============================================================ */
 
 function handleResponsiveState() {
   if (!sidebar || !main) {
@@ -671,8 +1475,8 @@ window.addEventListener("resize", handleResponsiveState);
 handleResponsiveState();
 
 /* ============================================================
-               PREVENT TIMER LEAK
-               ============================================================ */
+   PREVENT TIMER LEAK
+   ============================================================ */
 
 window.addEventListener("beforeunload", function () {
   clearInterval(EXECUTE.timer.interval);

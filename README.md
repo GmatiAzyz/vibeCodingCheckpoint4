@@ -32,7 +32,7 @@ No frameworks or external libraries are currently required.
 
 ## Project Structure
 
-```text
+
 EXECUTE/
 ├── index.html
 ├── styles/
@@ -218,6 +218,10 @@ http://localhost:8000
 Status
 
 Active development
+
+Github Pages Link : 
+https://gmatiazyz.github.io/vibeCodingCheckpoint4/ 
+
 
 EXECUTE is currently a frontend productivity application and is being developed incrementally.
 
