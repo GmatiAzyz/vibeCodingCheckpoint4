@@ -32,14 +32,15 @@ No frameworks or external libraries are currently required.
 
 ## Project Structure
 
-
 EXECUTE/
 ├── index.html
 ├── styles/
-│   └── style.css
+│ └── style.css
 ├── js/
-│   └── app.js
-└── README.md
+│ └── app.js
+├── README.md
+│
+└── specs.md
 
 The current version keeps the HTML, CSS, and JavaScript in a single index.html file to make the project easy to run and modify.
 
@@ -219,9 +220,8 @@ Status
 
 Active development
 
-Github Pages Link : 
-https://gmatiazyz.github.io/vibeCodingCheckpoint4/ 
-
+Github Pages Link :
+https://gmatiazyz.github.io/vibeCodingCheckpoint4/
 
 EXECUTE is currently a frontend productivity application and is being developed incrementally.
 
@@ -230,4 +230,7 @@ The goal is to keep the core experience fast and simple while gradually adding m
 License
 
 This project is currently for personal development and experimentation.
+
+```
+
 ```

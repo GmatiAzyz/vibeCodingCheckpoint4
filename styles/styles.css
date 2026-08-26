@@ -167,6 +167,42 @@ svg {
   width: var(--sidebar-collapsed);
 }
 
+/* ============================================================
+   COLLAPSED SIDEBAR
+   ============================================================ */
+
+.sidebar.collapsed .sidebar-brand {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.sidebar.collapsed .sidebar-brand-text {
+  display: none;
+}
+
+.sidebar.collapsed .nav-item {
+  justify-content: center;
+  gap: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.sidebar.collapsed .nav-label {
+  display: none;
+}
+
+.sidebar.collapsed .collapse-toggle {
+  justify-content: center;
+  gap: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.sidebar.collapsed .collapse-toggle span {
+  display: none;
+}
+
 /* Brand */
 
 .sidebar-brand {
@@ -197,17 +233,39 @@ svg {
   background: var(--accent);
   color: var(--text-on-accent);
 
-  border-radius: var(--radius-sm);
+  border-radius: 8px;
 
-  font-size: 14px;
-  font-weight: 800;
+  font-size: 24px;
+  font-weight: 900;
+  font-family: Arial, Helvetica, sans-serif;
+
+  line-height: 1;
+
+  transform: rotate(-45deg);
+
+  /* Visual centering of the E inside the rotated mark */
+  padding-bottom: 1px;
+
+  box-shadow:
+    0 2px 5px rgba(0, 0, 0, 0.08);
+
+  transition:
+    transform var(--transition),
+    box-shadow var(--transition);
+}
+
+.sidebar-brand:hover .sidebar-brand-icon {
+  transform: rotate(0deg) scale(1.06);
+
+  box-shadow:
+    0 4px 10px rgba(0, 0, 0, 0.12);
 }
 
 .sidebar-brand-text {
   color: var(--text-primary);
 
-  font-size: 20px;
-  font-weight: 700;
+  font-size: 24px;
+  font-weight: 900;
 
   letter-spacing: -0.02em;
 
@@ -776,6 +834,13 @@ svg {
   letter-spacing: -0.02em;
 }
 
+.focus-page-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
 /* ============================================================
    PROGRESS CARD
    ============================================================ */
@@ -1043,8 +1108,8 @@ svg {
 
   position: absolute;
 
-  left: 5px;
-  top: 2px;
+  left: 50%;
+  top: 50%;
 
   width: 6px;
   height: 10px;
@@ -1052,7 +1117,7 @@ svg {
   border-right: 2px solid white;
   border-bottom: 2px solid white;
 
-  transform: rotate(45deg);
+  transform: translate(-50%, -58%) rotate(45deg);
 }
 
 .task-content {
@@ -1870,9 +1935,7 @@ svg {
 
   max-height: calc(100vh - 40px);
   overflow-y: auto;
-
 }
-
 
 @keyframes modalIn {
   from {
@@ -2023,4 +2086,10 @@ svg {
   .modal-actions .btn {
     width: 100%;
   }
+}
+
+#focus-start svg {
+  width: 18px !important;
+  height: 18px !important;
+  flex-shrink: 0;
 }

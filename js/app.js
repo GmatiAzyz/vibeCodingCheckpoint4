@@ -327,7 +327,9 @@ function renderActivities() {
 function createTask(title, category, duration, priority, goalId) {
   const validPriorities = ["high", "medium", "low"];
 
-  const normalizedPriority = validPriorities.includes(priority) ? priority : "low";
+  const normalizedPriority = validPriorities.includes(priority)
+    ? priority
+    : "low";
 
   return {
     id: createId("task"),
@@ -449,6 +451,9 @@ function onTasksChanged() {
   renderGoals();
   updateFocusCard();
   updateProgress();
+
+  // Keep the focus timer synchronized with the current task.
+  syncFocusTimerWithCurrentTask();
 }
 
 /* ============================================================
@@ -550,16 +555,22 @@ function updateFocusCard() {
     dashboardSubtitle.textContent = task.duration + " session planned.";
   }
 
+  updateDashboardFocusButton();
+
   if (focusPageTitle) {
     focusPageTitle.textContent = task.title;
   }
 
   if (focusPageSubtitle) {
-    const subtitleParts = [escapeHTML(task.category), escapeHTML(task.priority) + " priority"];
+    const subtitleParts = [
+      escapeHTML(task.category),
+      escapeHTML(task.priority) + " priority",
+    ];
     if (goal) {
       subtitleParts.push(escapeHTML(goal.title));
     }
-    focusPageSubtitle.textContent = subtitleParts.join(" · ") + " · " + task.duration;
+    focusPageSubtitle.textContent =
+      subtitleParts.join(" · ") + " · " + task.duration;
   }
 }
 
@@ -866,8 +877,7 @@ taskForm?.addEventListener("submit", function (event) {
 
   const goalInput = $("#task-goal-input");
 
-  const goalId =
-    goalInput && goalInput.value ? goalInput.value : null;
+  const goalId = goalInput && goalInput.value ? goalInput.value : null;
 
   const task = createTask(title, category, duration, priority, goalId);
 
@@ -1027,10 +1037,7 @@ function renderGoals() {
     const taskProgressText =
       stats.total === 0
         ? "No tasks linked"
-        : stats.completed +
-          " of " +
-          stats.total +
-          " tasks completed";
+        : stats.completed + " of " + stats.total + " tasks completed";
 
     card.innerHTML = `
 
@@ -1508,7 +1515,8 @@ function updateProgress() {
   const completedTasksThisWeek = getCompletedTasksCount({ thisWeek: true });
 
   const totalTasks = EXECUTE.tasks.length;
-  const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+  const completionRate =
+    totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
   const totalGoals = EXECUTE.goals.length;
   const activeGoals = getActiveGoalsCount();
@@ -1533,7 +1541,9 @@ function updateProgress() {
   }).length;
 
   const todaySessions = EXECUTE.focusSessions.filter(function (session) {
-    return session.completedAt && isToday(new Date(session.completedAt).getTime());
+    return (
+      session.completedAt && isToday(new Date(session.completedAt).getTime())
+    );
   }).length;
 
   const tasksMetric = $("#progress-metric-tasks");
@@ -1545,8 +1555,7 @@ function updateProgress() {
   const tasksWeekMetric = $("#progress-metric-tasks-week");
 
   if (tasksWeekMetric) {
-    tasksWeekMetric.textContent =
-      "+" + completedTasksThisWeek + " this week";
+    tasksWeekMetric.textContent = "+" + completedTasksThisWeek + " this week";
   }
 
   const tasksCreatedMetric = $("#progress-metric-tasks-created");
@@ -1923,7 +1932,7 @@ function updateFocusButton() {
       <svg viewBox="0 0 24 24">
 
         <polygon
-          points="10 8 16 12 10 16 10 8"
+            points="7 5 19 12 7 19 7 5"
         />
 
       </svg>
@@ -1937,7 +1946,7 @@ function updateFocusButton() {
       <svg viewBox="0 0 24 24">
 
         <polygon
-          points="10 8 16 12 10 16 10 8"
+            points="7 5 19 12 7 19 7 5"
         />
 
       </svg>
@@ -1948,12 +1957,52 @@ function updateFocusButton() {
   }
 }
 
+function updateDashboardFocusButton() {
+  const button = $("#dashboard-start-focus");
+
+  if (!button) {
+    return;
+  }
+
+  if (EXECUTE.timer.running) {
+    button.textContent = "Pause Session";
+  } else if (EXECUTE.timer.remaining < EXECUTE.timer.duration) {
+    button.textContent = "Resume Session";
+  } else {
+    button.textContent = "Start Session";
+  }
+}
+
 function toggleFocusTimer() {
   if (EXECUTE.timer.running) {
     pauseFocusTimer();
   } else {
     startFocusTimer();
   }
+}
+function parseTaskDuration(duration) {
+  if (!duration) {
+    return 25 * 60;
+  }
+
+  const value = String(duration).trim().toLowerCase();
+
+  // Hours: "1h", "1.5h", "2 hours"
+  const hours = value.match(/(\d+(?:\.\d+)?)\s*(?:h|hour|hours)/);
+
+  if (hours) {
+    return Math.round(parseFloat(hours[1]) * 60 * 60);
+  }
+
+  // Minutes: "30 min", "30m", "30 minutes"
+  const minutes = value.match(/(\d+)\s*(?:m|min|mins|minute|minutes)/);
+
+  if (minutes) {
+    return parseInt(minutes[1], 10) * 60;
+  }
+
+  // Fallback
+  return 25 * 60;
 }
 
 function startFocusTimer() {
@@ -1963,16 +2012,34 @@ function startFocusTimer() {
 
   const currentTask = getCurrentFocusTask();
 
-  EXECUTE.timer.activeTaskId = currentTask ? currentTask.id : null;
-  EXECUTE.timer.startedAt = new Date().toISOString();
+  if (!currentTask) {
+    return;
+  }
+
+  // New session: determine duration from the task.
+  if (
+    EXECUTE.timer.remaining === EXECUTE.timer.duration ||
+    EXECUTE.timer.activeTaskId === null
+  ) {
+    EXECUTE.timer.duration = parseTaskDuration(currentTask.duration);
+    EXECUTE.timer.remaining = EXECUTE.timer.duration;
+  }
+
+  EXECUTE.timer.activeTaskId = currentTask.id;
+
+  if (!EXECUTE.timer.startedAt) {
+    EXECUTE.timer.startedAt = new Date().toISOString();
+  }
+
   EXECUTE.timer.running = true;
 
+  renderTimer();
   updateFocusButton();
+  updateDashboardFocusButton();
 
   EXECUTE.timer.interval = setInterval(function () {
     if (EXECUTE.timer.remaining <= 0) {
       finishFocusTimer();
-
       return;
     }
 
@@ -1990,6 +2057,7 @@ function pauseFocusTimer() {
   EXECUTE.timer.interval = null;
 
   updateFocusButton();
+  updateDashboardFocusButton();
 }
 
 function resetFocusTimer() {
@@ -2006,6 +2074,50 @@ function resetFocusTimer() {
   renderTimer();
 
   updateFocusButton();
+
+  updateDashboardFocusButton();
+}
+
+function syncFocusTimerWithCurrentTask() {
+  const currentTask = getCurrentFocusTask();
+
+  // No available focus task.
+  if (!currentTask) {
+    EXECUTE.timer.running = false;
+
+    clearInterval(EXECUTE.timer.interval);
+    EXECUTE.timer.interval = null;
+
+    EXECUTE.timer.activeTaskId = null;
+    EXECUTE.timer.startedAt = null;
+    EXECUTE.timer.duration = 25 * 60;
+    EXECUTE.timer.remaining = EXECUTE.timer.duration;
+
+    renderTimer();
+    updateFocusButton();
+    updateDashboardFocusButton();
+
+    return;
+  }
+
+  // If the current focus task changed,
+  // completely initialize the timer for the new task.
+  if (EXECUTE.timer.activeTaskId !== currentTask.id) {
+    EXECUTE.timer.running = false;
+
+    clearInterval(EXECUTE.timer.interval);
+    EXECUTE.timer.interval = null;
+
+    EXECUTE.timer.activeTaskId = null;
+    EXECUTE.timer.startedAt = null;
+
+    EXECUTE.timer.duration = parseTaskDuration(currentTask.duration);
+    EXECUTE.timer.remaining = EXECUTE.timer.duration;
+
+    renderTimer();
+    updateFocusButton();
+    updateDashboardFocusButton();
+  }
 }
 
 function finishFocusTimer() {
@@ -2039,6 +2151,8 @@ function finishFocusTimer() {
 
   updateDashboard();
   updateProgress();
+
+  updateDashboardFocusButton();
 }
 
 /* Focus button */
@@ -2054,11 +2168,14 @@ $("#focus-reset")?.addEventListener("click", resetFocusTimer);
 $("#dashboard-start-focus")?.addEventListener("click", function () {
   const currentTask = getCurrentFocusTask();
 
-  if (currentTask) {
-    showSection("focus");
-    if (!EXECUTE.timer.running) {
-      startFocusTimer();
-    }
+  if (!currentTask) {
+    return;
+  }
+
+  if (EXECUTE.timer.running) {
+    pauseFocusTimer();
+  } else {
+    startFocusTimer();
   }
 });
 
@@ -2102,10 +2219,18 @@ updateProgress();
  * Timer.
  */
 
+const initialFocusTask = getCurrentFocusTask();
+
+if (initialFocusTask) {
+  EXECUTE.timer.duration = parseTaskDuration(initialFocusTask.duration);
+  EXECUTE.timer.remaining = EXECUTE.timer.duration;
+}
+
 renderTimer();
 
 updateFocusButton();
 
+updateDashboardFocusButton();
 /*
  * Initial page.
  */
