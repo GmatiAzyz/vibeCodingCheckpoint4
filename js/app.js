@@ -20,11 +20,15 @@ const EXECUTE = {
 
   activities: [],
 
+  focusSessions: [],
+
   timer: {
     duration: 25 * 60,
     remaining: 25 * 60,
     running: false,
     interval: null,
+    activeTaskId: null,
+    startedAt: null,
   },
 };
 
@@ -51,6 +55,8 @@ const STORAGE_KEYS = {
 
   activities: "execute_activities",
 
+  focusSessions: "execute_focus_sessions",
+
   theme: "execute_theme",
 
   sidebar: "execute_sidebar_collapsed",
@@ -71,6 +77,13 @@ function saveActivities() {
   );
 }
 
+function saveFocusSessions() {
+  localStorage.setItem(
+    STORAGE_KEYS.focusSessions,
+    JSON.stringify(EXECUTE.focusSessions),
+  );
+}
+
 function loadData() {
   try {
     const savedTasks = localStorage.getItem(STORAGE_KEYS.tasks);
@@ -79,11 +92,20 @@ function loadData() {
 
     const savedActivities = localStorage.getItem(STORAGE_KEYS.activities);
 
+    const savedFocusSessions = localStorage.getItem(STORAGE_KEYS.focusSessions);
+
     EXECUTE.tasks = savedTasks ? JSON.parse(savedTasks) : [];
 
     EXECUTE.goals = savedGoals ? JSON.parse(savedGoals) : [];
 
     EXECUTE.activities = savedActivities ? JSON.parse(savedActivities) : [];
+
+    if (savedFocusSessions) {
+      const parsed = JSON.parse(savedFocusSessions);
+      EXECUTE.focusSessions = Array.isArray(parsed) ? parsed : [];
+    } else {
+      EXECUTE.focusSessions = [];
+    }
 
     normalizeTasks();
   } catch (error) {
@@ -92,6 +114,7 @@ function loadData() {
     EXECUTE.tasks = [];
     EXECUTE.goals = [];
     EXECUTE.activities = [];
+    EXECUTE.focusSessions = [];
   }
 }
 
@@ -409,6 +432,7 @@ function onTasksChanged() {
   renderTasks();
   renderGoals();
   updateFocusCard();
+  updateProgress();
 }
 
 /* ============================================================
@@ -1109,6 +1133,7 @@ function deleteGoal(goalId) {
   renderGoals();
   renderTasks();
   updateFocusCard();
+  updateProgress();
 }
 
 $(".goal-list")?.addEventListener("click", function (event) {
@@ -1177,6 +1202,7 @@ goalForm?.addEventListener("submit", function (event) {
   syncAllGoalProgress();
 
   renderGoals();
+  updateProgress();
 
   closeModal("goal-modal");
 
@@ -1260,13 +1286,9 @@ function getActiveGoalsCount() {
 function getCompletedFocusSessions(options) {
   const onlyThisWeek = options && options.thisWeek;
 
-  return EXECUTE.activities.filter(function (activity) {
-    if (activity.text !== "Completed a focus session") {
-      return false;
-    }
-
+  return EXECUTE.focusSessions.filter(function (session) {
     if (onlyThisWeek) {
-      return isThisWeek(activity.timestamp);
+      return isThisWeek(new Date(session.completedAt).getTime());
     }
 
     return true;
@@ -1306,8 +1328,8 @@ function getProductiveDayKeys() {
     }
   });
 
-  getCompletedFocusSessions().forEach(function (activity) {
-    days.add(toDateKey(activity.timestamp));
+  EXECUTE.focusSessions.forEach(function (session) {
+    days.add(toDateKey(new Date(session.completedAt).getTime()));
   });
 
   return days;
@@ -1475,15 +1497,34 @@ function updateProgress() {
   const completedTasks = getCompletedTasksCount();
   const completedTasksThisWeek = getCompletedTasksCount({ thisWeek: true });
 
+  const totalTasks = EXECUTE.tasks.length;
+  const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+  const totalGoals = EXECUTE.goals.length;
+  const activeGoals = getActiveGoalsCount();
+
   const allFocusSessions = getCompletedFocusSessions();
   const weekFocusSessions = getCompletedFocusSessions({ thisWeek: true });
 
-  const totalFocusSeconds = getFocusSeconds(allFocusSessions.length);
-  const weekFocusSeconds = getFocusSeconds(weekFocusSessions.length);
+  const totalFocusSeconds = allFocusSessions.reduce(function (sum, session) {
+    return sum + session.duration;
+  }, 0);
+
+  const weekFocusSeconds = weekFocusSessions.reduce(function (sum, session) {
+    return sum + session.duration;
+  }, 0);
 
   const productiveDays = getProductiveDayKeys();
   const streaks = calculateStreaks(productiveDays);
   const weeklyExecution = getWeeklyExecutionPercent(productiveDays);
+
+  const todayTasks = EXECUTE.tasks.filter(function (task) {
+    return task.completed && task.completedAt && isToday(task.completedAt);
+  }).length;
+
+  const todaySessions = EXECUTE.focusSessions.filter(function (session) {
+    return session.completedAt && isToday(new Date(session.completedAt).getTime());
+  }).length;
 
   const tasksMetric = $("#progress-metric-tasks");
 
@@ -1496,6 +1537,30 @@ function updateProgress() {
   if (tasksWeekMetric) {
     tasksWeekMetric.textContent =
       "+" + completedTasksThisWeek + " this week";
+  }
+
+  const tasksCreatedMetric = $("#progress-metric-tasks-created");
+
+  if (tasksCreatedMetric) {
+    tasksCreatedMetric.textContent = totalTasks;
+  }
+
+  const tasksRateMetric = $("#progress-metric-tasks-rate");
+
+  if (tasksRateMetric) {
+    tasksRateMetric.textContent = completionRate + "% completion rate";
+  }
+
+  const goalsMetric = $("#progress-metric-goals");
+
+  if (goalsMetric) {
+    goalsMetric.textContent = totalGoals;
+  }
+
+  const goalsActiveMetric = $("#progress-metric-goals-active");
+
+  if (goalsActiveMetric) {
+    goalsActiveMetric.textContent = activeGoals + " active";
   }
 
   const focusMetric = $("#progress-metric-focus");
@@ -1533,6 +1598,18 @@ function updateProgress() {
 
   if (weeklyFill) {
     weeklyFill.style.width = weeklyExecution + "%";
+  }
+
+  const todayTasksMetric = $("#progress-metric-today-tasks");
+
+  if (todayTasksMetric) {
+    todayTasksMetric.textContent = todayTasks + " tasks";
+  }
+
+  const todaySessionsMetric = $("#progress-metric-today-sessions");
+
+  if (todaySessionsMetric) {
+    todaySessionsMetric.textContent = todaySessions + " sessions";
   }
 }
 
@@ -1874,6 +1951,10 @@ function startFocusTimer() {
     return;
   }
 
+  const currentTask = getCurrentFocusTask();
+
+  EXECUTE.timer.activeTaskId = currentTask ? currentTask.id : null;
+  EXECUTE.timer.startedAt = new Date().toISOString();
   EXECUTE.timer.running = true;
 
   updateFocusButton();
@@ -1901,6 +1982,22 @@ function pauseFocusTimer() {
   updateFocusButton();
 }
 
+function resetFocusTimer() {
+  EXECUTE.timer.running = false;
+
+  clearInterval(EXECUTE.timer.interval);
+
+  EXECUTE.timer.interval = null;
+
+  EXECUTE.timer.activeTaskId = null;
+  EXECUTE.timer.startedAt = null;
+  EXECUTE.timer.remaining = EXECUTE.timer.duration;
+
+  renderTimer();
+
+  updateFocusButton();
+}
+
 function finishFocusTimer() {
   clearInterval(EXECUTE.timer.interval);
 
@@ -1908,8 +2005,22 @@ function finishFocusTimer() {
 
   EXECUTE.timer.running = false;
 
+  const session = {
+    id: createId("session"),
+    taskId: EXECUTE.timer.activeTaskId,
+    duration: EXECUTE.timer.duration,
+    startedAt: EXECUTE.timer.startedAt,
+    completedAt: new Date().toISOString(),
+  };
+
+  EXECUTE.focusSessions.push(session);
+
+  saveFocusSessions();
+
   addActivity("Completed a focus session");
 
+  EXECUTE.timer.activeTaskId = null;
+  EXECUTE.timer.startedAt = null;
   EXECUTE.timer.remaining = EXECUTE.timer.duration;
 
   renderTimer();
@@ -1917,11 +2028,16 @@ function finishFocusTimer() {
   updateFocusButton();
 
   updateDashboard();
+  updateProgress();
 }
 
 /* Focus button */
 
 $("#focus-start")?.addEventListener("click", toggleFocusTimer);
+
+/* Reset button */
+
+$("#focus-reset")?.addEventListener("click", resetFocusTimer);
 
 /* Dashboard focus button */
 
@@ -1966,6 +2082,8 @@ renderActivities();
 updateDashboard();
 
 updateFocusCard();
+
+updateProgress();
 
 /*
  * Timer.
