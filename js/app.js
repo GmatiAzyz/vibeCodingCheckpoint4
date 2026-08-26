@@ -408,6 +408,119 @@ function onTasksChanged() {
   syncAllGoalProgress();
   renderTasks();
   renderGoals();
+  updateFocusCard();
+}
+
+/* ============================================================
+   CURRENT FOCUS SELECTION
+   ============================================================ */
+
+function getCurrentFocusTask() {
+  const incompleteTasks = EXECUTE.tasks.filter(function (task) {
+    return !task.completed;
+  });
+
+  if (incompleteTasks.length === 0) {
+    return null;
+  }
+
+  const priorityOrder = { high: 0, medium: 1, low: 2 };
+
+  incompleteTasks.sort(function (a, b) {
+    const priorityDiff = priorityOrder[a.priority] - priorityOrder[b.priority];
+
+    if (priorityDiff !== 0) {
+      return priorityDiff;
+    }
+
+    return a.createdAt - b.createdAt;
+  });
+
+  return incompleteTasks[0];
+}
+
+function updateFocusCard() {
+  const task = getCurrentFocusTask();
+
+  const dashboardGoalLabel = $("#dashboard .focus-goal-label");
+  const dashboardTitle = $("#dashboard .focus-title");
+  const dashboardSubtitle = $("#dashboard .focus-subtitle");
+  const dashboardStartButton = $("#dashboard-start-focus");
+
+  const focusPageTitle = $(".focus-page-title");
+  const focusPageSubtitle = $(".focus-page-subtitle");
+
+  if (!task) {
+    if (dashboardGoalLabel) {
+      dashboardGoalLabel.innerHTML = `
+        <svg viewBox="0 0 24 24">
+          <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+          <line x1="4" y1="22" x2="4" y2="15" />
+        </svg>
+        No tasks ready to execute
+      `;
+    }
+
+    if (dashboardTitle) {
+      dashboardTitle.textContent = "";
+    }
+
+    if (dashboardSubtitle) {
+      dashboardSubtitle.textContent = "";
+    }
+
+    if (focusPageTitle) {
+      focusPageTitle.textContent = "No tasks ready to execute";
+    }
+
+    if (focusPageSubtitle) {
+      focusPageSubtitle.textContent = "";
+    }
+
+    return;
+  }
+
+  const goal = getGoalById(task.goalId);
+
+  if (dashboardGoalLabel) {
+    if (goal) {
+      dashboardGoalLabel.innerHTML = `
+        <svg viewBox="0 0 24 24">
+          <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+          <line x1="4" y1="22" x2="4" y2="15" />
+        </svg>
+        Goal: ${escapeHTML(goal.title)}
+      `;
+    } else {
+      dashboardGoalLabel.innerHTML = `
+        <svg viewBox="0 0 24 24">
+          <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+          <line x1="4" y1="22" x2="4" y2="15" />
+        </svg>
+        No goal linked
+      `;
+    }
+  }
+
+  if (dashboardTitle) {
+    dashboardTitle.textContent = task.title;
+  }
+
+  if (dashboardSubtitle) {
+    dashboardSubtitle.textContent = task.duration + " session planned.";
+  }
+
+  if (focusPageTitle) {
+    focusPageTitle.textContent = task.title;
+  }
+
+  if (focusPageSubtitle) {
+    const subtitleParts = [escapeHTML(task.category), escapeHTML(task.priority) + " priority"];
+    if (goal) {
+      subtitleParts.push(escapeHTML(goal.title));
+    }
+    focusPageSubtitle.textContent = subtitleParts.join(" · ") + " · " + task.duration;
+  }
 }
 
 /* ============================================================
@@ -995,6 +1108,7 @@ function deleteGoal(goalId) {
 
   renderGoals();
   renderTasks();
+  updateFocusCard();
 }
 
 $(".goal-list")?.addEventListener("click", function (event) {
@@ -1812,7 +1926,11 @@ $("#focus-start")?.addEventListener("click", toggleFocusTimer);
 /* Dashboard focus button */
 
 $("#dashboard-start-focus")?.addEventListener("click", function () {
-  showSection("focus");
+  const currentTask = getCurrentFocusTask();
+
+  if (currentTask) {
+    showSection("focus");
+  }
 });
 
 /* ============================================================
@@ -1846,6 +1964,8 @@ renderGoals();
 renderActivities();
 
 updateDashboard();
+
+updateFocusCard();
 
 /*
  * Timer.
