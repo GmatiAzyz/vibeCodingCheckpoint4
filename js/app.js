@@ -259,12 +259,24 @@ function renderActivities() {
     return;
   }
 
-  /*
-   * If there is no activity saved yet,
-   * keep the original HTML activity cards.
-   */
-
   if (!EXECUTE.activities.length) {
+    container.innerHTML = `
+
+      <div
+        class="empty-state"
+        style="min-height:120px"
+      >
+
+        <h2>No recent activity</h2>
+
+        <p>
+          Complete tasks or focus sessions to see activity here.
+        </p>
+
+      </div>
+
+    `;
+
     return;
   }
 
@@ -313,6 +325,10 @@ function renderActivities() {
    ============================================================ */
 
 function createTask(title, category, duration, priority, goalId) {
+  const validPriorities = ["high", "medium", "low"];
+
+  const normalizedPriority = validPriorities.includes(priority) ? priority : "low";
+
   return {
     id: createId("task"),
 
@@ -322,7 +338,7 @@ function createTask(title, category, duration, priority, goalId) {
 
     duration: duration || "No duration",
 
-    priority: priority || "low",
+    priority: normalizedPriority,
 
     completed: false,
 
@@ -1259,19 +1275,17 @@ function isTaskActiveToday(task) {
 }
 
 function getTodayTaskStats() {
-  const todayTasks = EXECUTE.tasks.filter(isTaskActiveToday);
-
   const completedToday = EXECUTE.tasks.filter(function (task) {
     return task.completed && isToday(task.completedAt);
   }).length;
 
-  const totalToday = todayTasks.length;
+  const totalTasks = EXECUTE.tasks.length;
 
   const percentage =
-    totalToday === 0 ? 0 : Math.round((completedToday / totalToday) * 100);
+    totalTasks === 0 ? 0 : Math.round((completedToday / totalTasks) * 100);
 
   return {
-    total: totalToday,
+    total: totalTasks,
     completed: completedToday,
     percentage: percentage,
   };
@@ -1293,10 +1307,6 @@ function getCompletedFocusSessions(options) {
 
     return true;
   });
-}
-
-function getFocusSeconds(sessionCount) {
-  return sessionCount * EXECUTE.timer.duration;
 }
 
 function formatFocusDuration(totalSeconds) {
@@ -2046,6 +2056,9 @@ $("#dashboard-start-focus")?.addEventListener("click", function () {
 
   if (currentTask) {
     showSection("focus");
+    if (!EXECUTE.timer.running) {
+      startFocusTimer();
+    }
   }
 });
 
